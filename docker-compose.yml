@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: rag_db
+    environment:
+      POSTGRES_USER: langgraph_user_2
+      POSTGRES_PASSWORD: langchain123
+      POSTGRES_DB: rag_langgraph_2
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  
+  backend:
+    build: ./backend
+    container_name: rag_backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: rag_frontend
+    ports:
+     - "8501:8501"
+    depends_on:
+      - backend
+    environment:
+      - API_BASE=http://backend:8000
+  
+volumes:
+  pgdata:
+  
