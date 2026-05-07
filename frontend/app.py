@@ -1,197 +1,222 @@
 import streamlit as st
 import requests
 import os
-
-backend_url=os.getenv("API_BASE","http://localhost:8000")
-
-st.title("rag chatbot (langgraph)")
-
-if "token" not in st.session_state:
-    st.session_state["token"]=None
-
-if "documents" not in st.session_state:
-    st.session_state["documents"]=None
-
-if "document_id" not in st.session_state:
-    st.session_state["document_id"]=None
-
-if "conversations" not in st.session_state:
-    st.session_state["conversations"]=None
-
-if "conversation_id" not in st.session_state:
-    st.session_state["conversation_id"]=None
     
-if "chat_history" not in st.session_state:
-    st.session_state["chat_history"]=[]
+# =========================
+# CONFIG
+# =========================
+BACKEND_URL = os.getenv("API_BASE", "http://localhost:8001")
 
-if "selected_document" not in st.session_state:
-    st.session_state["selected_document"]=None
+# =========================
+# SESSION STATE INIT
+# =========================
+def init_state():
+    defaults = {
+        "token": None,
+        "documents": [],
+        "selected_document": None,
+        "selected_document_id": None,
+        "conversations": [],
+        "conversation_id": None,
+        "messages": [],
+        # "uploaded_once":False
+    }
+    for k, v in defaults.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
 
-if not st.session_state["token"]:
-    st.subheader("login")
-    username= st.text_input("Username")
-    password = st.text_input("Password",type="password")
+init_state()
+
+# =========================
+# HELPERS
+# =========================
+def auth_headers():
+    return {"Authorization": f"Bearer {st.session_state.token}"}
+
+def fetch_documents():
+    res = requests.get(f"{BACKEND_URL}/documents/document_list", headers=auth_headers())
+    if res.status_code == 200:
+        st.session_state.documents = res.json()
+    else:
+        st.session_state.documents = []
+
+def fetch_conversations(document_id):
+    res = requests.get(
+        f"{BACKEND_URL}/conversations/conversation_list",
+        params={"document_id": document_id},
+        headers=auth_headers()
+    )
+    st.session_state.conversations = res.json() if res.status_code == 200 else []
+
+def fetch_messages(conversation_id):
+    res = requests.get(
+        f"{BACKEND_URL}/messages",
+        params={"conversation_id": conversation_id},
+        headers=auth_headers()
+    )
     
-    if st.button("login"):
+    st.session_state.messages = res.json() if res.status_code == 200 else []
+
+def reset_chat():
+    st.session_state.conversation_id = None
+    st.session_state.messages = []
+    
+def on_doc_change():
+    # 'doc_selector' is the key we will assign to the selectbox
+    new_doc = st.session_state.doc_selector
+    if new_doc:
+        st.session_state.selected_document = new_doc
+        st.session_state.selected_document_id = new_doc["document_id"]
+        reset_chat()
+        fetch_conversations(new_doc["document_id"])
+    
+    else:
+        st.session_state.selected_document = None
+        st.session_state.selected_document_id = None
+        st.session_state.conversations = []
+        reset_chat()
+# =========================
+# LOGIN
+# =========================
+st.title("📚 RAG Chatbot (LangGraph)")
+
+if not st.session_state.token:
+    st.subheader("🔐 Login")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
         res = requests.post(
-            f"{backend_url}/auth/login",
-            json={
-                "username":username,
-                "password":password
-            }
+            f"{BACKEND_URL}/auth/login",
+            json={"username": username, "password": password}
         )
-        print("res is",res)
-        if res.status_code==200:
-            st.session_state["token"]=res.json()["access_token"]
-            st.success("logged in")
-        else:
-            st.error("login failed")
-            
-        docs=requests.get(
-            f"{backend_url}/documents",
-            headers={"Authorization":f"Bearer {st.session_state['token']}"}
-        )
-        print("*"*30)
-        print("docs are",docs.json())
-        if docs.status_code==200:
-            st.session_state["documents"]=docs.json()
+        if res.status_code == 200:
+            st.session_state.token = res.json()["access_token"]
+            fetch_documents()
+            st.success("Logged in successfully")
             st.rerun()
-
         else:
-            st.session_state["documents"]=[]
+            st.error("Login failed")
+
     st.stop()
-    
 
-st.subheader("upload pdf")
+# =========================
+# SIDEBAR – CONVERSATIONS
+# =========================
+st.sidebar.title("💬 Chats")
 
-uploaded_file=st.file_uploader("choose a file",type=["pdf"])
+if st.sidebar.button("➕ New Chat"):
+    reset_chat()
 
-if uploaded_file:
-    files={"file":(uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-    headers={"Authorization":f"Bearer {st.session_state['token']}"}
-    res= requests.post(
-        f"{backend_url}/documents/upload",
-        files=files,
-        headers=headers
-    )
-    
-    if res.status_code==200:
-        st.session_state["document_id"]=res.json()["document_id"]
-        st.success("document uploaded")
-    else:
-        st.error("upload failed")
-        
-        
-st.subheader("your documents")
-if st.session_state["documents"]:
-    selected_doc=st.selectbox(
-        "select a document",
-        st.session_state["documents"],
-        format_func=lambda d: d["document_name"]
-    )
-    print("*"*30)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"selected doc is{selected_doc['document_id']}")
-        f_1.write("\n\n")
-    print("selected doc is",selected_doc["document_id"])
-    print("*"*30)
-    st.session_state["selected_document"]=selected_doc
-    document_id=selected_doc["document_id"]
-    st.session_state["document_id"]=document_id
-    
-    if document_id:
-        res = requests.get(
-            f"{backend_url}/conversations",
-            params={"document_id":document_id},
-            headers={"Authorization":f"Bearer {st.session_state['token']}"}
+if st.session_state.selected_document_id:
+        for c in st.session_state.conversations:
+            label = f"🧵 {c['conversation_id'][:8]}"
+            if st.sidebar.button(label):
+                st.session_state.conversation_id = c["conversation_id"]
+                fetch_messages(c["conversation_id"])
+
+# =========================
+# TOP BAR – DOCUMENTS
+# =========================
+st.subheader("📄 Documents")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    uploaded_file = st.file_uploader("Upload new PDF", type=["pdf"])
+    if uploaded_file and st.button("Confirm Upload"):
+        files = {
+            "file": (
+                uploaded_file.name,
+                uploaded_file.getvalue(),
+                "application/pdf"
+            )
+        }
+        res = requests.post(
+            f"{BACKEND_URL}/documents/upload",
+            files=files,
+            headers=auth_headers()
         )
-        if res.status_code==200:
-            st.session_state["conversations"]=res.json()
+
+        if res.status_code == 200:
+            fetch_documents()
+            # st.session_state.uploaded_once=True
+            st.success("PDF uploaded")
         else:
-            st.session_state["conversations"]=[]
-    else:
-        st.info("No documents_id found.")
+            st.error("Upload failed")
 
-else:
-    st.info("No documents found. upload new pdf.")
+with col2:
+    if st.session_state.documents:
+        selected_doc = st.selectbox(
+            "Select existing PDF",
+            st.session_state.documents,
+            format_func=lambda d: d["document_name"],
+            key="doc_selector",
+            on_change=on_doc_change,
+            index=None,
+            placeholder="Choose a document..."
+        )
 
-    
-st.subheader("conversations")
+# =========================
+# CHAT WINDOW
+# =========================
+st.divider()
+st.subheader("🧠 Chat")
 
-options= [{"conversation_id":None,"label": "new conversation"}]
+# Render messages
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-if st.session_state["conversations"]:
-    for c in st.session_state["conversations"]:
-        options.append({
-            "conversation_id":c["conversation_id"],
-            "label":f"conversation created at {c['created_at']}"
-        })
-    
-    selected_conv=st.selectbox(
-        "select conversation",
-        options,
-        format_func= lambda c: c["label"]
-    )
-    print("*"*50)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"selected_conv conversation is {selected_conv}")
-        f_1.write("\n\n")
-    print("selected_conv conversation is",selected_conv)
-    print("*"*50)
-    st.session_state["conversation_id"]=selected_conv["conversation_id"]
-# else:
-#     st.session_state["conversations"]=[]
-    
-st.subheader("chat")
-question=st.text_input("ask question")
-if st.button("send") and question:
-    headers={
-        "Authorization":f"Bearer {st.session_state['token']}",
-        "Content-Type":"application/json"
+# Chat input
+user_input = st.chat_input("Ask a question...")
+
+if user_input:
+    if not st.session_state.selected_document_id:
+        st.error("Please select or upload a document first.")
+        st.stop()
+
+    # Show user message immediately
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    payload = {
+        "question": user_input,
+        "conversation_id": st.session_state.conversation_id,
+        "document_id": st.session_state.selected_document_id
     }
-    
-    print("*"*50)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"in chat endpoint conversation_id is {st.session_state['conversation_id']}")
-        f_1.write("\n\n")
-    print("in chat endpoint conversation_id is",st.session_state["conversation_id"])
-    print("*"*50)
-    print("*"*50)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"in chat endpoint document_id is {st.session_state['document_id']}")
-        f_1.write("\n\n")
-    print("in chat endpoint document_id is",st.session_state["document_id"])
-    print("*"*50)    
-    payload={
-        "question":question,
-        "conversation_id":st.session_state["conversation_id"],
-        "document_id":st.session_state["document_id"]
-    }
-    
-    response=requests.post(
-        f"{backend_url}/chat",
-        headers=headers,
+
+    res = requests.post(
+        f"{BACKEND_URL}/chat",
+        headers={
+            **auth_headers(),
+            "Content-Type": "application/json"
+        },
         json=payload,
         stream=True
     )
 
-    answer=""
-    
-    placeholder=st.empty()
-    
-    for chunk in response.iter_content(chunk_size=None):
-        token=chunk.decode("utf-8")
-        answer+=token
-        placeholder.markdown(answer)
-        
-    if st.session_state["conversation_id"] is None:
-        st.session_state['conversation_id']=response.headers.get("x-conversation-id")
-        print("*"*50)
-        with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-            f_1.write(f"at the end conversation_id is {st.session_state['conversation_id']}")
-            f_1.write("\n\n")
-        print("at the end conversation_id is",st.session_state["conversation_id"])
-        print("*"*50)
-        
-    st.session_state["chat_history"].append(("user",question))
-    st.session_state["chat_history"].append(("assistant",answer))
+    # Stream assistant response
+    answer = ""
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        for chunk in res.iter_content(chunk_size=None):
+            token = chunk.decode("utf-8")
+            answer += token
+            placeholder.markdown(answer)
+
+    # Capture conversation_id from response header (new chat)
+    if st.session_state.conversation_id is None:
+
+        st.session_state.conversation_id = res.headers.get("x-conversation-id")
+        fetch_conversations(st.session_state.selected_document_id)
+
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": answer
+    })

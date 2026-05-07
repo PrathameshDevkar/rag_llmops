@@ -19,13 +19,7 @@ def upload_document(
     db:Session=Depends(get_db),
     current_user: User=Depends(get_current_user)
 ):
-    print("*"*50)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"inside the upload endpoint")
-        f_1.write("\n\n")
-    print("inside the upload endpoint")
-    print("*"*50)
-
+            
     if file.content_type!="application/pdf":
         raise HTTPException(status_code=400, detail="only PDF files are allowed")
     
@@ -36,13 +30,6 @@ def upload_document(
         file_path=""
     )
 
-    print("*"*50)
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"document entry created before db.add {document.id}")
-        f_1.write("\n\n")
-    print("document entry created", document.id)
-    print("*"*50)
-
     db.add(document)
     db.commit()
     db.refresh(document)
@@ -51,10 +38,7 @@ def upload_document(
     user_folder=f"backend/pdf_storage_2/{current_user.id}"
     os.makedirs(user_folder,exist_ok=True)
     
-    with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-        f_1.write(f"document entry created after db.add {document.id}")
-        f_1.write("\n\n")
-    #final file path
+        #final file path
     file_path=f"{user_folder}/{document.id}.pdf"
     
     #save file
@@ -88,13 +72,11 @@ def upload_document(
         "file_path":document.file_path
     }
     
-@router.get("")
+@router.get("/document_list")
 def list_documents(                
         db: Session=Depends(get_db),
         current_user: User= Depends(get_current_user)
             ):
-    print("*"*20)
-    print(":current user id is",current_user)
     documents=(
         db.query(Document)
         .filter(Document.user_id==current_user.id)
@@ -103,12 +85,7 @@ def list_documents(
     )
     for doc in documents:
         print("*"*50)
-        with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-            f_1.write(f"inside the docuemnts empty endpoint ids are{doc.id}")
-            f_1.write("\n\n")
-        print("inside the docuemnts "" endpoint ids are",doc.id)
-        print("*"*50)
-
+                    
     return [
         {
             "document_id":str(doc.id),

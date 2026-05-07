@@ -15,7 +15,6 @@ tags → Swagger grouping
 Import schema, not raw dicts
 """
 
-
 @router.post("",status_code=status.HTTP_201_CREATED)
 def create_user(user_in:UserCreate,db: Session = Depends(get_db)):
     print("*"*50)
@@ -31,6 +30,9 @@ def create_user(user_in:UserCreate,db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        # Add this right after db.refresh(user)
+        count = db.query(User).count()
+        print(f"Total users in DB: {count}")
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="username already exist")

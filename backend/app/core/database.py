@@ -24,4 +24,19 @@ def get_db():
     finally:
         db.close()
 
+"""
+import psycopg
 
+conn = psycopg(
+    db_name = "",
+    user = "",
+    password = ""
+)
+cur = conn.cursor()
+
+cur.execute("SELECT * FROM users WHERE username = %s, ("abc",))
+
+row = cur.fetchall()
+
+
+"""

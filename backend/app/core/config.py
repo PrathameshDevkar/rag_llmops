@@ -1,24 +1,34 @@
+# settings.py
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\.env" ,override=True)
 
-class Settings():
-    PROJECT_NAME= "Langgraph RAG BACKEND"
-    
-    DB_HOST=os.getenv("DB_HOST")
-    DB_PORT=os.getenv("DB_PORT")
-    DB_NAME=os.getenv("DB_NAME")
-    DB_USER=os.getenv("DB_USER")
-    DB_PASSWORD=os.getenv("DB_PASSWORD")
-    
-    DATABASE_URL=(
-        f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}"
-        f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    )
-    psycopg_URL=(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}" )
-    
-settings= Settings()
+class Settings:
+    PROJECT_NAME = "Langgraph RAG BACKEND"
+
+    def __init__(self):
+        self.DB_HOST = os.getenv("DB_HOST")
+        self.DB_PORT = os.getenv("DB_PORT")
+        self.DB_NAME = os.getenv("DB_NAME")
+        self.DB_USER = os.getenv("DB_USER")
+        self.DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+        print("==========================================")
+        print("database name is", self.DB_NAME)
+
+        self.DATABASE_URL = (
+            f"postgresql+psycopg://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+        self.psycopg_URL = (
+            f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+settings = Settings()
+
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
 ALGORITHM = os.getenv("JWT_ALGORITHM","HS256")

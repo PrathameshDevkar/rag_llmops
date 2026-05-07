@@ -26,6 +26,7 @@ def retrieval_node(state:RAGState) -> RAGState:
         )
         
         chunks=[r.content for r in results]
+        print(f"========================retrieved chunks are: {chunks}===============================")
         
         return {
             **state,
@@ -54,7 +55,10 @@ def generate_node(state:RAGState) -> Iterator[RAGState]:
     # return {**state,
     #         "generated_answer":result}
     partial_answer = ""
-
+    print("&"*50)
+    print("chat history is ",state["chat_history"])
+    print("&"*50)
+    
     for chunk in chain.stream({
         "context": "\n".join(state["retrieved_chunks"]),
         "question": state["user_question"],

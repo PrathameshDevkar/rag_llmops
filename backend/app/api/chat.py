@@ -116,13 +116,7 @@ def chat(
     
     if chat_in.conversation_id:
         conversation_id=chat_in.conversation_id
-        print("*"*50)
-        with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-            f_1.write(f"conversation id exists {conversation_id}")
-            f_1.write("\n\n")
-        print("conversation id exists" ,conversation_id)
-        print("*"*50)
-
+        
     else:
         conversation= create_conversation(
             db,
@@ -130,14 +124,7 @@ def chat(
             document_id=chat_in.document_id
         )
         conversation_id=str(conversation.id)
-        print("*"*50)
-        with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-            f_1.write(f"conversation id doesnt exists {conversation_id}")
-            f_1.write("\n\n")
-        print("conversation id doesnt exists" ,conversation_id)
-        print("*"*50)
-
-        
+                
     add_message(
         db=db,
         conversation_id=conversation_id,
@@ -185,13 +172,7 @@ def chat(
         
         
         finally:
-            print("*"*20)
-            with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-                f_1.write(f"final_answer {final_answer}")
-                f_1.write("\n\n")
-            print("final answer is",final_answer)
-            print("final answer type is",type(final_answer))
-            print("*"*20)            
+                       
             if final_answer:
                 add_message(
                     db,

@@ -6,9 +6,9 @@ from backend.app.models.conversations import Conversation
 from backend.app.models.user import User
 from backend.app.core.auth import get_current_user
 
-router = APIRouter(prefix="/conversations",tags=["conversatio"])
+router = APIRouter(prefix="/conversations",tags=["conversation"])
 
-@router.get("")
+@router.get("/conversation_list")
 def list_conversation(
     db: Session=Depends(get_db),
     document_id: str= Query(...),
@@ -23,15 +23,7 @@ def list_conversation(
         )
         .order_by(Conversation.created_at.desc())
         .all()
-    )
-    for conv in conversations:
-        print("*"*50)
-        with open(r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\error.txt","a") as f_1:
-            f_1.write(f"returned conversations id from endpoint conversations are {str(conv.id)}")
-            f_1.write("\n\n")
-        print("returned conversations id from endpoint conversations are",str(conv.id))
-        print("*"*50)
-
+    )        
     return [
         {
             "conversation_id":str(conv.id),
