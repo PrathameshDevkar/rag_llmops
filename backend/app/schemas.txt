@@ -1,0 +1,40 @@
+========================================
+ FILE: chat.py (Comments Removed)
+========================================
+
+from pydantic import BaseModel 
+from typing import Optional 
+
+class ChatRequest (BaseModel ):
+    question :str 
+    conversation_id :Optional [str ]=None 
+    document_id :Optional [str ]=None 
+
+class ChatResponse (BaseModel ):
+    conversation_id :str 
+    answer :str 
+
+========================================
+ FILE: login_auth.py (Comments Removed)
+========================================
+
+from pydantic import BaseModel 
+
+class LoginRequest (BaseModel ):
+    username :str 
+    password :str 
+
+
+
+========================================
+ FILE: user.py (Comments Removed)
+========================================
+
+from pydantic import BaseModel ,Field 
+
+class UserCreate (BaseModel ):
+    username :str =Field (description ="username in string",min_length =3 ,max_length =50 )
+    password :str =Field (description ="password in stirng",min_length =6 )
+
+
+

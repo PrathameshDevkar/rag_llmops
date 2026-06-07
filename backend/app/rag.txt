@@ -1,0 +1,155 @@
+========================================
+ FILE: checkpoint.py (Comments Removed)
+========================================
+
+from langgraph .checkpoint .postgres import PostgresSaver 
+from backend .app .core .config import settings 
+from backend .app .core .database import engine 
+from contextlib import contextmanager 
+
+@contextmanager 
+def get_checkpointer ():
+    with PostgresSaver .from_conn_string (settings .psycopg_URL )as saver :
+        yield saver 
+
+
+========================================
+ FILE: graph.py (Comments Removed)
+========================================
+
+from langgraph .graph import StateGraph ,START ,END 
+from backend .app .rag .state import RAGState 
+from backend .app .rag .nodes import retrieval_node ,generate_node 
+from backend .app .rag .checkpoint import get_checkpointer 
+from langgraph .checkpoint .postgres import PostgresSaver 
+from backend .app .core .config import Settings 
+
+def build_graph (checkpointer ):
+
+    graph =StateGraph (RAGState )
+
+    graph .add_node ("retrieval_node",retrieval_node )
+    graph .add_node ("generate_node",generate_node )
+
+    graph .add_edge (START ,"retrieval_node")
+    graph .add_edge ("retrieval_node","generate_node")
+    graph .add_edge ("generate_node",END )
+
+    return graph .compile (checkpointer =checkpointer )
+
+
+
+========================================
+ FILE: nodes.py (Comments Removed)
+========================================
+
+from backend .app .core .database import SessionLocal 
+from backend .app .rag .state import RAGState 
+from backend .app .services .retrieval import similarity_search 
+from langchain_huggingface import HuggingFaceEndpoint ,ChatHuggingFace 
+from langchain_core .prompts import PromptTemplate 
+from langchain_core .output_parsers import StrOutputParser 
+from typing import Iterator 
+from dotenv import load_dotenv 
+import os 
+from colorama import Fore 
+
+load_dotenv ()
+
+api_key =os .getenv ("HUGGINGFACE_API_KEY")
+
+llm =HuggingFaceEndpoint (model ="meta-llama/Llama-3.1-8B-Instruct",huggingfacehub_api_token =api_key )
+model =ChatHuggingFace (llm =llm )
+
+def retrieval_node (state :RAGState )->RAGState :
+    db =SessionLocal ()
+
+    try :
+        results =similarity_search (
+        db =db ,
+        query =state ['user_question'],
+        document_id =state ['document_id']
+        )
+        query =state ['user_question'],
+        document_id =state ['document_id']
+        print (Fore .YELLOW +f"\n\n=====user_question in nodes.py is: {query}=========\n\n"+Fore .RESET )
+        print (Fore .YELLOW +f"\n\n=====document_id in nodes.py is : {document_id}=========\n\n"+Fore .RESET )
+
+        chunks =[r .content for r in results ]
+        print (Fore .YELLOW +f"\n\n=====retrieved chunks in nodes.py are: {chunks}=========\n\n"+Fore .RESET )
+
+        return {
+        **state ,
+        "retrieved_chunks":chunks 
+        }
+    finally :
+        db .close ()
+
+def generate_node (state :RAGState )->Iterator [RAGState ]:
+
+    prompt =PromptTemplate (
+    template ="""
+        you are a helpful assistant who gives answer to the given question based on the given context. 
+        if you dont know the answer just say that you cannot answer the question.
+        
+        conversation so far - {chat_history}
+        here is the context - {context}
+        here is the question - {question}""",
+    input_variables =['context','question','chat_history']
+    )
+
+    chain =prompt |model |StrOutputParser ()
+
+
+
+
+
+    partial_answer =""
+    print (Fore .YELLOW +f"\n\nchat history is:{state['chat_history']}\n\n"+Fore .RESET )
+
+    for chunk in chain .stream ({
+    "context":"\n".join (state ["retrieved_chunks"]),
+    "question":state ["user_question"],
+    "chat_history":"\n".join (state ["chat_history"]),
+    }):
+        partial_answer +=chunk 
+        yield {
+        **state ,
+        "generated_answer":partial_answer 
+        }
+
+
+========================================
+ FILE: state.py (Comments Removed)
+========================================
+
+from typing import TypedDict ,List ,Optional 
+
+class RAGState (TypedDict ):
+    user_id :str 
+    document_id :str 
+    user_question :str 
+    retrieved_chunks :Optional [List [str ]]
+    generated_answer :Optional [str ]
+    chat_history :Optional [List [str ]]
+
+========================================
+ FILE: test_rag.py (Comments Removed)
+========================================
+
+from backend .app .rag .graph import build_graph 
+
+graph =build_graph ()
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,6 +10,7 @@ from backend.app.models.document import Document
 from backend.app.models.base import Chunk
 from backend.app.services.pdf_loader_chunker import load_and_chunk_pdf
 from backend.app.services.embeddings import embed_text
+from colorama import Fore
 
 router=APIRouter(prefix="/documents",tags=["documents"])
 
@@ -40,7 +41,8 @@ def upload_document(
     
         #final file path
     file_path=f"{user_folder}/{document.id}.pdf"
-    
+    print(Fore.YELLOW + f"\n\nfile_path is: {file_path}\n\n" + Fore.RESET)
+
     #save file
     with open(file_path,"wb") as buffer:
         shutil.copyfileobj(file.file,buffer)
@@ -50,20 +52,20 @@ def upload_document(
     db.commit()
     
     lc_chunks=load_and_chunk_pdf(file_path)
+    if not lc_chunks:
+        raise HTTPException(status_code=500, detail="PDF chunking returned no chunks")
     
-    for idx,lc_doc in enumerate(lc_chunks):
-        embeddings= embed_text(lc_doc.page_content)
-
-        chunk=Chunk(
+    chunks_to_insert = []
+    for idx, lc_doc in enumerate(lc_chunks):
+        embeddings = embed_text(lc_doc.page_content)
+        chunks_to_insert.append(Chunk(
             document_id=document.id,
             chunk_index=idx,
             content=lc_doc.page_content,
             content_metadata=lc_doc.metadata,
             embedding=embeddings
-        )
-        
-        db.add(chunk)
-    
+        ))
+    db.add_all(chunks_to_insert)
     db.commit()
     
     return{

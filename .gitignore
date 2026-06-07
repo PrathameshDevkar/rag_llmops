@@ -207,12 +207,18 @@ marimo/_lsp/
 __marimo__/
 
 notes.docx
+concepts.docx
 .env
 uv.lock
 pyproject.toml
-pdf_storage
-pdf_storage_2
+pdf_storage/
+pdf_storage_2/
 ADK_1.pdf
 att_all_need.pdf
 .python-version
 .vscode
+DPDP_chatbot/
+faiss/
+documents/
+chroma_db/
+.venv

@@ -7,6 +7,7 @@ from langchain_core.output_parsers import StrOutputParser
 from typing import Iterator
 from dotenv import load_dotenv
 import os
+from colorama import Fore
 
 load_dotenv()
 
@@ -24,9 +25,13 @@ def retrieval_node(state:RAGState) -> RAGState:
             query=state['user_question'],
             document_id=state['document_id']
         )
-        
+        query=state['user_question']
+        document_id=state['document_id']
+        print(Fore.YELLOW + f"\n\n=====user_question in nodes.py is: {query}=========\n\n" + Fore.RESET)
+        print(Fore.YELLOW + f"\n\n=====document_id in nodes.py is : {document_id}=========\n\n" + Fore.RESET)
+
         chunks=[r.content for r in results]
-        print(f"========================retrieved chunks are: {chunks}===============================")
+        print(Fore.YELLOW + f"\n\n=====retrieved chunks in nodes.py are: {chunks}=========\n\n" + Fore.RESET)
         
         return {
             **state,
@@ -55,9 +60,7 @@ def generate_node(state:RAGState) -> Iterator[RAGState]:
     # return {**state,
     #         "generated_answer":result}
     partial_answer = ""
-    print("&"*50)
-    print("chat history is ",state["chat_history"])
-    print("&"*50)
+    print(Fore.YELLOW + f"\n\nchat history is:{state['chat_history']}\n\n" + Fore.RESET)
     
     for chunk in chain.stream({
         "context": "\n".join(state["retrieved_chunks"]),

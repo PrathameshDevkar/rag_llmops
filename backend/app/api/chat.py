@@ -1,91 +1,3 @@
-# from sqlalchemy.orm import Session
-# from fastapi import APIRouter, Depends, HTTPException
-
-# from backend.app.core.database import get_db
-# from backend.app.models.user import User
-# from backend.app.core.auth import get_current_user
-# from backend.app.schemas.chat import ChatRequest, ChatResponse
-# from backend.app.services.conversation_services import (create_conversation, add_message, get_conversation_messages)
-# from backend.app.rag.graph import build_graph
-# from backend.app.rag.checkpoint import get_checkpointer
-
-
-# router = APIRouter(prefix="/chat",tags=["chat"])
-
-# @router.post("",response_model=ChatResponse)
-# def chat(
-#     chat_in:ChatRequest,
-#     db: Session=Depends(get_db),
-#     current_user: User=Depends(get_current_user)
-# ):
-#     #validate input
-#     if not chat_in.conversation_id and not chat_in.document_id:
-#         return HTTPException(
-#             status_code=400,
-#             detail="document_id is required to start a conversation"
-#         )
-    
-#     if chat_in.conversation_id:
-#         conversation_id=chat_in.conversation_id
-#     else:
-#         conversation= create_conversation(
-#             db,
-#             user_id=current_user.id,
-#             document_id=chat_in.document_id
-#         )
-#         conversation_id=str(conversation.id)
-        
-#     add_message(
-#         db=db,
-#         conversation_id=conversation_id,
-#         role= "user",
-#         content=chat_in.question
-#     )
-    
-#     messages=get_conversation_messages(db,conversation_id)
-    
-#     chat_history=[
-#         f"{m.role}={m.content}"
-#         for m in messages
-#     ]
-        
-#     state={
-#         "user_id":str(current_user.id),
-#         "document_id":chat_in.document_id,
-#         "user_question": chat_in.question,
-#         "chat_history":chat_history,
-#         "retrieved_chunks":None,
-#         "generated_answer":None
-#     }
-    
-#     with get_checkpointer() as checkpointer:
-#         graph = build_graph(checkpointer)
-
-#         result = graph.invoke(
-#             state,
-#             config={
-#                 "configurable": {
-#                     "thread_id": conversation_id
-#                 }
-#             }
-#         )
-
-    
-#     # result= graph.invoke(state)
-#     answer=result["generated_answer"]
-    
-#     add_message(
-#         db,
-#         conversation_id,
-#         role="assistant",
-#         content=answer
-#     )
-    
-#     return ChatResponse(
-#         conversation_id=conversation_id,
-#         answer=answer
-#     )
-
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -93,20 +5,23 @@ from backend.app.core.database import get_db
 from backend.app.models.user import User
 from backend.app.core.auth import get_current_user
 from backend.app.schemas.chat import ChatRequest, ChatResponse
-from backend.app.services.conversation_services import (create_conversation, add_message, get_conversation_messages)
+from backend.app.services.conversation_services import (create_conversation, add_message, get_conversation_messages,generate_conversation_title)
 from backend.app.rag.graph import build_graph
 from backend.app.rag.checkpoint import get_checkpointer
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import AIMessage
 
-router = APIRouter(prefix="/chat",tags=["chat"])
+from colorama import Fore
 
+router = APIRouter(prefix="/chat",tags=["chat"])
 @router.post("",response_model=ChatResponse)
 def chat(
     chat_in:ChatRequest,
     db: Session=Depends(get_db),
     current_user: User=Depends(get_current_user)
 ):
+    title = ""
+
     #validate input
     if not chat_in.conversation_id and not chat_in.document_id:
         return HTTPException(
@@ -114,6 +29,9 @@ def chat(
             detail="document_id is required to start a conversation"
         )
     
+    print(Fore.YELLOW + f"\n\n=====conversation_id in api/chat.py is: {chat_in.conversation_id}=========\n\n" + Fore.RESET)
+    print(Fore.YELLOW + f"\n\n=====document_id in api/chat.py is : {chat_in.document_id}=========\n\n" + Fore.RESET)
+
     if chat_in.conversation_id:
         conversation_id=chat_in.conversation_id
         
@@ -124,6 +42,7 @@ def chat(
             document_id=chat_in.document_id
         )
         conversation_id=str(conversation.id)
+        title = generate_conversation_title(chat_in.question)
                 
     add_message(
         db=db,
@@ -138,7 +57,8 @@ def chat(
         f"{m.role}={m.content}"
         for m in messages
     ]
-        
+    print(Fore.YELLOW + f"\n\n===========chat history in api/chat.py is: {chat_history}===================\n\n" + Fore.RESET)
+    
     state={
         "user_id":str(current_user.id),
         "document_id":chat_in.document_id,
@@ -194,5 +114,8 @@ def chat(
     # )
     return StreamingResponse(
     event_generator(),
-    media_type="text/plain"
+    media_type="text/plain",
+    headers={"x-conversation-id": conversation_id,
+             "x-conversation-title":title if title else conversation_id[:8]
+             }
     )

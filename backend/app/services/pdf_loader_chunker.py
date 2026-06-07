@@ -3,21 +3,14 @@
 from docling.document_converter import DocumentConverter
 from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
 from langchain_core.documents import Document
-
+from colorama import Fore
 
 def load_and_chunk_pdf(
     file_path:str,
     chunk_size:int=1000,
     chunk_overlap:int=100
 ):
-    
-    # loader=PyPDFLoader(file_path)
-    # docs=loader.load()
-    
-    # splitter= RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
-    # chunks=splitter.split_documents(docs)
-    
-    # return chunks
+
     
     converter = DocumentConverter()
     docling_docs = converter.convert(file_path).document
@@ -26,8 +19,16 @@ def load_and_chunk_pdf(
     chunks = chunker.chunk(dl_doc = docling_docs)
     
     docs=[]
+    i=0
     for chunk in chunks:
-        docs.append(Document(page_content=chunk.text, metadata= {"heading":chunk.meta.__dict__["headings"][0]}))
+        if i==3:
+            break
+        print(Fore.YELLOW + f"\n\nchunk during uploading is:{chunk}\n\n" + Fore.RESET)
+        i+=1
+    for chunk in chunks:
+        headings = chunk.meta.__dict__.get("headings") or []
+        heading = headings[0] or None
+        docs.append(Document(page_content=chunk.text, metadata= {"heading":heading}))
         
     return docs
     
