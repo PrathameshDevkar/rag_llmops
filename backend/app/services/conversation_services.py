@@ -2,16 +2,12 @@ from sqlalchemy.orm import Session
 from backend.app.models.conversations import Conversation
 from backend.app.models.messages import Messages
 
-from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_core.messages import HumanMessage
 import os
 
-api_key = os.getenv("HUGGINGFACE_API_KEY")
-llm = HuggingFaceEndpoint(
-    model="meta-llama/Llama-3.1-8B-Instruct",
-    huggingfacehub_api_token=api_key
-)
-model = ChatHuggingFace(llm=llm)
+from backend.app.services.model_loader import get_llm
+
+model = get_llm()
 
 def generate_conversation_title(question: str) -> str:
     prompt = f"Generate a short 5-7 word title that summarizes this question. Return only the title, nothing else:\n\n{question}"

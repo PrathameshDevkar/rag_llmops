@@ -14,11 +14,6 @@ from backend .app .models .memories import Memories
  FILE: chunk.py (Comments Removed)
 ========================================
 
-import uuid 
-from sqlalchemy import Column ,ForeignKey ,Text ,Integer ,JSON 
-from sqlalchemy .dialects .postgresql import UUID 
-from pgvector .sqlalchemy import Vector 
-
 from backend .app .core .database import Base 
 
 class Chunk (Base ):
@@ -38,12 +33,6 @@ class Chunk (Base ):
 ========================================
  FILE: conversations.py (Comments Removed)
 ========================================
-
-from sqlalchemy import Column ,ForeignKey ,DateTime 
-import uuid 
-from sqlalchemy .dialects .postgresql import UUID 
-from sqlalchemy .sql import func 
-
 from backend .app .core .database import Base 
 
 class Conversation (Base ):
@@ -58,14 +47,6 @@ class Conversation (Base ):
 ========================================
  FILE: document.py (Comments Removed)
 ========================================
-
-import uuid 
-from sqlalchemy import Column ,String ,ForeignKey ,DateTime 
-from sqlalchemy .dialects .postgresql import UUID 
-from sqlalchemy .sql import func 
-
-from backend .app .core .database import Base 
-
 class Document (Base ):
     __tablename__ ='documents'
 
@@ -86,14 +67,6 @@ class Document (Base ):
  FILE: memories.py (Comments Removed)
 ========================================
 
-import uuid 
-from sqlalchemy import Column ,Text ,DateTime ,ForeignKey 
-from sqlalchemy .dialects .postgresql import UUID 
-from sqlalchemy .sql import func 
-from pgvector .sqlalchemy import Vector 
-
-from backend .app .core .database import Base 
-
 class Memories (Base ):
     __tablename__ ="memories"
 
@@ -109,13 +82,6 @@ class Memories (Base ):
 ========================================
  FILE: messages.py (Comments Removed)
 ========================================
-
-import uuid 
-from sqlalchemy import Column ,Text ,ForeignKey ,DateTime 
-from sqlalchemy .dialects .postgresql import UUID 
-from sqlalchemy .sql import func 
-
-from backend .app .core .database import Base 
 
 class Messages (Base ):
     __tablename__ ="messages"
@@ -136,28 +102,10 @@ class Messages (Base ):
  FILE: user.py (Comments Removed)
 ========================================
 
-import uuid 
-from sqlalchemy import Column ,String 
-from sqlalchemy .dialects .postgresql import UUID 
-
-from backend .app .core .database import Base 
-
 class User (Base ):
     __tablename__ ="users"
 
     id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
     username =Column (String ,unique =True ,nullable =False )
     password_hash =Column (String ,nullable =False )
-
-
-"""
-
-class User(Base):
- __tablename__ = "users"
- 
- id = Column(uuid(), primary_key)
- username = COlumn(string)
- password = Column(string)
-
-"""
 

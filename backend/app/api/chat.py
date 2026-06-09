@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from backend.app.core.database import get_db
 from backend.app.models.user import User
+from backend.app.models.conversations import Conversation
 from backend.app.core.auth import get_current_user
 from backend.app.schemas.chat import ChatRequest, ChatResponse
 from backend.app.services.conversation_services import (create_conversation, add_message, get_conversation_messages,generate_conversation_title)
@@ -17,11 +18,12 @@ router = APIRouter(prefix="/chat",tags=["chat"])
 @router.post("",response_model=ChatResponse)
 def chat(
     chat_in:ChatRequest,
+    request: Request,
     db: Session=Depends(get_db),
     current_user: User=Depends(get_current_user)
 ):
     title = ""
-
+    document_id = ""
     #validate input
     if not chat_in.conversation_id and not chat_in.document_id:
         return HTTPException(
@@ -34,6 +36,16 @@ def chat(
 
     if chat_in.conversation_id:
         conversation_id=chat_in.conversation_id
+        conversation = (
+            db.query(Conversation)
+            .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+            .first()
+        )
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        # Derive document_id safely from backend state, ignoring whatever the frontend sent
+        document_id = str(conversation.document_id)
         
     else:
         conversation= create_conversation(
@@ -41,6 +53,7 @@ def chat(
             user_id=current_user.id,
             document_id=chat_in.document_id
         )
+        document_id = chat_in.document_id
         conversation_id=str(conversation.id)
         title = generate_conversation_title(chat_in.question)
                 
@@ -59,9 +72,11 @@ def chat(
     ]
     print(Fore.YELLOW + f"\n\n===========chat history in api/chat.py is: {chat_history}===================\n\n" + Fore.RESET)
     
+    graph = request.app.state.graph
+    
     state={
         "user_id":str(current_user.id),
-        "document_id":chat_in.document_id,
+        "document_id":document_id,
         "user_question": chat_in.question,
         "chat_history":chat_history,
         "retrieved_chunks":None,
@@ -71,24 +86,20 @@ def chat(
     def event_generator():
         final_answer = ""
         try:
-            with get_checkpointer() as checkpointer:
-                checkpointer.setup()
-                graph = build_graph(checkpointer)
+            for event,metadata in graph.stream(
+                state,
+                config={
+                    "configurable": {
+                        "thread_id": conversation_id
+                    }
+                },
+                stream_mode='messages'
+            ):
 
-                for event,metadata in graph.stream(
-                    state,
-                    config={
-                        "configurable": {
-                            "thread_id": conversation_id
-                        }
-                    },
-                    stream_mode='messages'
-                ):
+                if isinstance(event,AIMessage):
 
-                    if isinstance(event,AIMessage):
-    
-                        final_answer+= event.content
-                        yield event.content
+                    final_answer+= event.content
+                    yield event.content
         
         
         finally:
@@ -100,18 +111,7 @@ def chat(
                     role="assistant",
                     content=final_answer
                 )
-
-
-    
-    # result= graph.invoke(state)
-    # answer=result["generated_answer"]
-    
-   
-    
-    # return ChatResponse(
-    #     conversation_id=conversation_id,
-    #     answer=answer
-    # )
+                
     return StreamingResponse(
     event_generator(),
     media_type="text/plain",

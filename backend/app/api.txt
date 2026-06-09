@@ -1,535 +1,279 @@
 ========================================
- FILE: auth.py (Comments Removed)
+ FILE: auth.py
 ========================================
-
-from fastapi import APIRouter ,Depends ,HTTPException ,status 
-from sqlalchemy .orm import Session 
-
-from backend .app .core .database import get_db 
-from backend .app .schemas .login_auth import LoginRequest 
-from backend .app .models .user import User 
-from backend .app .core .security import verify_password 
-from backend .app .core .auth import create_access_token 
-
 router =APIRouter (prefix ="/auth",tags =["auth"])
 
-@router .post ("/login")
-def login (
-credentials :LoginRequest ,
-db :Session =Depends (get_db )
+router=APIRouter(prefix="/auth", tags=["auth"])
+
+@router.post("/login")
+def login(
+    credentials: LoginRequest,
+    db: Session=Depends(get_db)
 ):
-    print ("inside the login")
-    print ("*"*20 )
-    print ("credentials are",credentials )
-    user =(
-    db .query (User )
-    .filter (User .username ==credentials .username )
-    .first ()
+    print("inside the login")
+    print("*"*20)
+    print("credentials are",credentials)
+    user=(
+        db.query(User)
+        .filter(User.username==credentials.username)
+        .first()
     )
-
-    if not user or not verify_password (credentials .password ,user .password_hash ):
-        raise HTTPException (
-        status_code =status .HTTP_401_UNAUTHORIZED ,
-        detail ="Invalid username or password"
+    
+    if not user or not verify_password(credentials.password,user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
         )
-
-    token =create_access_token (subject =str (user .id ))
-
+    
+    token= create_access_token(subject=str(user.id))
+    
     return {
-    "access_token":token ,
-    "token_type":"bearer"
+        "access_token":token,
+        "token_type":"bearer"
     }
-
 ========================================
  FILE: chat.py (Comments Removed)
 ========================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-from sqlalchemy .orm import Session 
-from fastapi import APIRouter ,Depends ,HTTPException 
-
-from backend .app .core .database import get_db 
-from backend .app .models .user import User 
-from backend .app .core .auth import get_current_user 
-from backend .app .schemas .chat import ChatRequest ,ChatResponse 
-from backend .app .services .conversation_services import (create_conversation ,add_message ,get_conversation_messages ,generate_conversation_title )
-from backend .app .rag .graph import build_graph 
-from backend .app .rag .checkpoint import get_checkpointer 
-from fastapi .responses import StreamingResponse 
-from langchain_core .messages import AIMessage 
-
-from colorama import Fore 
-
-router =APIRouter (prefix ="/chat",tags =["chat"])
-@router .post ("",response_model =ChatResponse )
-def chat (
-chat_in :ChatRequest ,
-db :Session =Depends (get_db ),
-current_user :User =Depends (get_current_user )
+router = APIRouter(prefix="/chat",tags=["chat"])
+@router.post("",response_model=ChatResponse)
+def chat(
+    chat_in:ChatRequest,
+    db: Session=Depends(get_db),
+    current_user: User=Depends(get_current_user)
 ):
-    title =""
+    title = ""
 
-
-    if not chat_in .conversation_id and not chat_in .document_id :
-        return HTTPException (
-        status_code =400 ,
-        detail ="document_id is required to start a conversation"
+    #validate input
+    if not chat_in.conversation_id and not chat_in.document_id:
+        return HTTPException(
+            status_code=400,
+            detail="document_id is required to start a conversation"
         )
+    
+    print(Fore.YELLOW + f"\n\n=====conversation_id in api/chat.py is: {chat_in.conversation_id}=========\n\n" + Fore.RESET)
+    print(Fore.YELLOW + f"\n\n=====document_id in api/chat.py is : {chat_in.document_id}=========\n\n" + Fore.RESET)
 
-    print (Fore .YELLOW +f"\n\n=====conversation_id in api/chat.py is: {chat_in.conversation_id}=========\n\n"+Fore .RESET )
-    print (Fore .YELLOW +f"\n\n=====document_id in api/chat.py is : {chat_in.document_id}=========\n\n"+Fore .RESET )
-
-    if chat_in .conversation_id :
-        conversation_id =chat_in .conversation_id 
-
-    else :
-        conversation =create_conversation (
-        db ,
-        user_id =current_user .id ,
-        document_id =chat_in .document_id 
+    if chat_in.conversation_id:
+        conversation_id=chat_in.conversation_id
+        
+    else:
+        conversation= create_conversation(
+            db,
+            user_id=current_user.id,
+            document_id=chat_in.document_id
         )
-        conversation_id =str (conversation .id )
-        title =generate_conversation_title (chat_in .question )
-
-    add_message (
-    db =db ,
-    conversation_id =conversation_id ,
-    role ="user",
-    content =chat_in .question 
+        conversation_id=str(conversation.id)
+        title = generate_conversation_title(chat_in.question)
+                
+    add_message(
+        db=db,
+        conversation_id=conversation_id,
+        role= "user",
+        content=chat_in.question
     )
-
-    messages =get_conversation_messages (db ,conversation_id )
-
-    chat_history =[
-    f"{m.role}={m.content}"
-    for m in messages 
+    
+    messages=get_conversation_messages(db,conversation_id)
+    
+    chat_history=[
+        f"{m.role}={m.content}"
+        for m in messages
     ]
-    print (Fore .YELLOW +f"\n\n===========chat history in api/chat.py is: {chat_history}===================\n\n"+Fore .RESET )
-
-    state ={
-    "user_id":str (current_user .id ),
-    "document_id":chat_in .document_id ,
-    "user_question":chat_in .question ,
-    "chat_history":chat_history ,
-    "retrieved_chunks":None ,
-    "generated_answer":None 
+    print(Fore.YELLOW + f"\n\n===========chat history in api/chat.py is: {chat_history}===================\n\n" + Fore.RESET)
+    
+    state={
+        "user_id":str(current_user.id),
+        "document_id":chat_in.document_id,
+        "user_question": chat_in.question,
+        "chat_history":chat_history,
+        "retrieved_chunks":None,
+        "generated_answer":None
     }
+    
+    def event_generator():
+        final_answer = ""
+        try:
+            with get_checkpointer() as checkpointer:
+                checkpointer.setup()
+                graph = build_graph(checkpointer)
 
-    def event_generator ():
-        final_answer =""
-        try :
-            with get_checkpointer ()as checkpointer :
-                checkpointer .setup ()
-                graph =build_graph (checkpointer )
-
-                for event ,metadata in graph .stream (
-                state ,
-                config ={
-                "configurable":{
-                "thread_id":conversation_id 
-                }
-                },
-                stream_mode ='messages'
+                for event,metadata in graph.stream(
+                    state,
+                    config={
+                        "configurable": {
+                            "thread_id": conversation_id
+                        }
+                    },
+                    stream_mode='messages'
                 ):
 
-                    if isinstance (event ,AIMessage ):
-
-                        final_answer +=event .content 
-                        yield event .content 
-
-
-        finally :
-
-            if final_answer :
-                add_message (
-                db ,
-                conversation_id ,
-                role ="assistant",
-                content =final_answer 
+                    if isinstance(event,AIMessage):
+    
+                        final_answer+= event.content
+                        yield event.content
+        
+        
+        finally:
+                       
+            if final_answer:
+                add_message(
+                    db,
+                    conversation_id,
+                    role="assistant",
+                    content=final_answer
                 )
-
-
-
-
-
-
-
-
-
-
-
-
-    return StreamingResponse (
-    event_generator (),
-    media_type ="text/plain",
-    headers ={"x-conversation-id":conversation_id ,
-    "x-conversation-title":title if title else conversation_id [:8 ]
-    }
+    return StreamingResponse(
+    event_generator(),
+    media_type="text/plain",
+    headers={"x-conversation-id": conversation_id,
+             "x-conversation-title":title if title else conversation_id[:8]
+             }
     )
 
 ========================================
  FILE: conversations.py (Comments Removed)
 ========================================
 
-from fastapi import APIRouter ,Depends ,Query 
-from sqlalchemy .orm import Session 
+router = APIRouter(prefix="/conversations",tags=["conversation"])
 
-from backend .app .core .database import get_db 
-from backend .app .models .conversations import Conversation 
-from backend .app .models .user import User 
-from backend .app .core .auth import get_current_user 
-
-router =APIRouter (prefix ="/conversations",tags =["conversation"])
-
-@router .get ("/conversation_list")
-def list_conversation (
-db :Session =Depends (get_db ),
-document_id :str =Query (...),
-current_user :User =Depends (get_current_user )
+@router.get("/conversation_list")
+def list_conversation(
+    db: Session=Depends(get_db),
+    document_id: str= Query(...),
+    current_user: User= Depends(get_current_user)
 ):
 
-    conversations =(
-    db .query (Conversation )
-    .filter (
-    Conversation .user_id ==current_user .id ,
-    Conversation .document_id ==document_id 
-    )
-    .order_by (Conversation .created_at .desc ())
-    .all ()
-    )
+    conversations= (
+        db.query(Conversation)
+        .filter(
+            Conversation.user_id==current_user.id,
+            Conversation.document_id==document_id
+        )
+        .order_by(Conversation.created_at.desc())
+        .all()
+    )        
     return [
-    {
-    "conversation_id":str (conv .id ),
-    "created_at":conv .created_at 
-    }
-    for conv in conversations 
+        {
+            "conversation_id":str(conv.id),
+            "created_at":conv.created_at
+        }
+        for conv in conversations
     ]
-
-========================================
- FILE: db_test.py (Comments Removed)
-========================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ========================================
  FILE: documents.py (Comments Removed)
 ========================================
 
-import os 
-from fastapi import APIRouter ,HTTPException ,Depends ,UploadFile ,File 
-from sqlalchemy .orm import Session 
-import shutil 
+router=APIRouter(prefix="/documents",tags=["documents"])
 
-from backend .app .core .database import get_db 
-from backend .app .models .user import User 
-from backend .app .core .auth import get_current_user 
-from backend .app .models .document import Document 
-from backend .app .models .base import Chunk 
-from backend .app .services .pdf_loader_chunker import load_and_chunk_pdf 
-from backend .app .services .embeddings import embed_text 
-from colorama import Fore 
-
-router =APIRouter (prefix ="/documents",tags =["documents"])
-
-@router .post ("/upload")
-def upload_document (
-file :UploadFile =File (...),
-db :Session =Depends (get_db ),
-current_user :User =Depends (get_current_user )
+@router.post("/upload")
+def upload_document(
+    file:UploadFile=File(...),
+    db:Session=Depends(get_db),
+    current_user: User=Depends(get_current_user)
 ):
-
-    if file .content_type !="application/pdf":
-        raise HTTPException (status_code =400 ,detail ="only PDF files are allowed")
-
-
-    document =Document (
-    user_id =current_user .id ,
-    filename =file .filename ,
-    file_path =""
+            
+    if file.content_type!="application/pdf":
+        raise HTTPException(status_code=400, detail="only PDF files are allowed")
+    
+    #Create document DB entry first
+    document=Document(
+        user_id=current_user.id,
+        filename=file.filename,
+        file_path=""
     )
 
-    db .add (document )
-    db .commit ()
-    db .refresh (document )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    
+    #create user folder
+    user_folder=f"backend/pdf_storage_2/{current_user.id}"
+    os.makedirs(user_folder,exist_ok=True)
+    
+        #final file path
+    file_path=f"{user_folder}/{document.id}.pdf"
+    print(Fore.YELLOW + f"\n\nfile_path is: {file_path}\n\n" + Fore.RESET)
 
-
-    user_folder =f"backend/pdf_storage_2/{current_user.id}"
-    os .makedirs (user_folder ,exist_ok =True )
-
-
-    file_path =f"{user_folder}/{document.id}.pdf"
-    print (Fore .YELLOW +f"\n\nfile_path is: {file_path}\n\n"+Fore .RESET )
-
-
-    with open (file_path ,"wb")as buffer :
-        shutil .copyfileobj (file .file ,buffer )
-
-
-    document .file_path =file_path 
-    db .commit ()
-
-    lc_chunks =load_and_chunk_pdf (file_path )
-    if not lc_chunks :
-        raise HTTPException (status_code =500 ,detail ="PDF chunking returned no chunks")
-
-    for idx ,lc_doc in enumerate (lc_chunks ):
-        print (Fore .YELLOW +"\n\ninside the for idx,lc_doc in enumerate(lc_chunks)\n\n"+Fore .RESET )
-        embeddings =embed_text (lc_doc .page_content )
-
-        chunk =Chunk (
-        document_id =document .id ,
-        chunk_index =idx ,
-        content =lc_doc .page_content ,
-        content_metadata =lc_doc .metadata ,
-        embedding =embeddings 
-        )
-
-        db .add (chunk )
-
-    db .commit ()
-
-    return {
-    "document_id":str (document .id ),
-    "filename":document .filename ,
-    "file_path":document .file_path 
+    #save file
+    with open(file_path,"wb") as buffer:
+        shutil.copyfileobj(file.file,buffer)
+        
+    #update path in db
+    document.file_path=file_path
+    db.commit()
+    
+    lc_chunks=load_and_chunk_pdf(file_path)
+    if not lc_chunks:
+        raise HTTPException(status_code=500, detail="PDF chunking returned no chunks")
+    
+    chunks_to_insert = []
+    for idx, lc_doc in enumerate(lc_chunks):
+        embeddings = embed_text(lc_doc.page_content)
+        chunks_to_insert.append(Chunk(
+            document_id=document.id,
+            chunk_index=idx,
+            content=lc_doc.page_content,
+            content_metadata=lc_doc.metadata,
+            embedding=embeddings
+        ))
+    db.add_all(chunks_to_insert)
+    db.commit()
+    
+    return{
+        "document_id":str(document.id),
+        "filename":document.filename,
+        "file_path":document.file_path
     }
-
-@router .get ("/document_list")
-def list_documents (
-db :Session =Depends (get_db ),
-current_user :User =Depends (get_current_user )
-):
-    documents =(
-    db .query (Document )
-    .filter (Document .user_id ==current_user .id )
-    .order_by (Document .uploaded_at .desc ())
-    .all ()
+    
+@router.get("/document_list")
+def list_documents(                
+        db: Session=Depends(get_db),
+        current_user: User= Depends(get_current_user)
+            ):
+    documents=(
+        db.query(Document)
+        .filter(Document.user_id==current_user.id)
+        .order_by(Document.uploaded_at.desc())
+        .all()
     )
-    for doc in documents :
-        print ("*"*50 )
-
+    for doc in documents:
+        print("*"*50)
+                    
     return [
-    {
-    "document_id":str (doc .id ),
-    "document_name":doc .filename ,
-    "uploaded_at":doc .uploaded_at 
-    }
-    for doc in documents 
+        {
+            "document_id":str(doc.id),
+            "document_name":doc.filename,
+            "uploaded_at":doc.uploaded_at
+        }
+        for doc in documents
     ]
-
-========================================
- FILE: health.py (Comments Removed)
-========================================
-
-from fastapi import APIRouter 
-
-router =APIRouter ()
-
-@router .get ("/health")
-def health ():
-    return {"status":"ok"}
-
-
-========================================
- FILE: me.py (Comments Removed)
-========================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ========================================
  FILE: messages.py (Comments Removed)
 ========================================
 
-from fastapi import APIRouter ,Depends ,Query 
-from sqlalchemy .orm import Session 
 
-from backend .app .core .database import get_db 
-from backend .app .services .conversation_services import get_conversation_messages 
+router= APIRouter(prefix="/messages",tags=["messages"])
 
-from colorama import Fore 
-
-router =APIRouter (prefix ="/messages",tags =["messages"])
-
-@router .get ("")
-def get_messages (
-conversation_id :str =Query (...),
-db :Session =Depends (get_db )
+@router.get("")
+def get_messages(
+    conversation_id:str =Query(...),
+    db: Session=Depends(get_db)    
 ):
-    messages =get_conversation_messages (db ,conversation_id )
-    print (Fore .YELLOW +f"\n\nmessages in the get_message are:{messages}\n\n"+Fore .RESET )
+    messages = get_conversation_messages(db,conversation_id )
+    print(Fore.YELLOW + f"\n\nmessages in the get_message are:{messages}\n\n" + Fore.RESET)
     return [
-    {
-    "role":m .role ,
-    "content":m .content ,
-    "created_at":str (m .created_at )
-    }
-    for m in messages 
+        {
+            "role": m.role,
+            "content": m.content,
+            "created_at": str(m.created_at)
+        }
+        for m in messages  # ← serialize properly
     ]
-
-========================================
- FILE: retrieval_test.py (Comments Removed)
-========================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ========================================
  FILE: users.py (Comments Removed)
 ========================================
-
-from fastapi import APIRouter ,Depends ,HTTPException ,status 
-from sqlalchemy .orm import Session 
-from sqlalchemy .exc import IntegrityError 
-
-from backend .app .core .database import get_db 
-from backend .app .models .user import User 
-from backend .app .schemas .user import UserCreate 
-from backend .app .core .security import hash_password 
-
-router =APIRouter (prefix ="/users",tags =["users"])
+router = APIRouter(prefix="/users",tags=["users"])
 """prefix="/users" → clean REST API
 
 tags → Swagger grouping
@@ -537,37 +281,29 @@ tags → Swagger grouping
 Import schema, not raw dicts
 """
 
-@router .post ("",status_code =status .HTTP_201_CREATED )
-def create_user (user_in :UserCreate ,db :Session =Depends (get_db )):
-    print ("*"*50 )
-    print ('password hash is',user_in .password )
-    print ("*"*50 )
-    user =User (
-    username =user_in .username ,
-    password_hash =hash_password (user_in .password )
+@router.post("",status_code=status.HTTP_201_CREATED)
+def create_user(user_in:UserCreate,db: Session = Depends(get_db)):
+    print("*"*50)
+    print('password hash is',user_in.password)
+    print("*"*50)
+    user=User(
+        username=user_in.username,
+        password_hash=hash_password(user_in.password)
     )
 
 
-    try :
-        db .add (user )
-        db .commit ()
-        db .refresh (user )
-
-        count =db .query (User ).count ()
-        print (f"Total users in DB: {count}")
-    except IntegrityError :
-        db .rollback ()
-        raise HTTPException (status_code =status .HTTP_409_CONFLICT ,detail ="username already exist")
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        # Add this right after db.refresh(user)
+        count = db.query(User).count()
+        print(f"Total users in DB: {count}")
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="username already exist")
 
     return {
-    "id":str (user .id ),
-    "username":user .username 
+        "id": str(user.id),
+        "username": user.username
     }
-
-
-========================================
- FILE: __init__.py (Comments Removed)
-========================================
-
-
-

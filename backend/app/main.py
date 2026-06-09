@@ -11,7 +11,27 @@ from backend.app.api.chat import router as chat_router
 from backend.app.api.conversations import router as conversation_router
 from backend.app.api.messages import router as get_messages
 
-app = FastAPI(title=settings.PROJECT_NAME)
+from backend.app.rag.checkpoint import get_checkpointer
+from backend.app.rag.graph import build_graph
+
+from contextlib import asynccontextmanager
+
+from colorama import Fore
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    #this runs on startup
+    print(Fore.YELLOW + "=========Initializing the production langgraph state runner============" + Fore.RESET)
+
+    with get_checkpointer() as checkpointer:
+        checkpointer.setup()
+        app.state.graph = build_graph(checkpointer) 
+
+        yield
+    #This runs on shutdown
+    print(Fore.YELLOW + "=========Shutting down the production langgraph state runner============" + Fore.RESET)
+    
+app = FastAPI(title=settings.PROJECT_NAME, lifespan = lifespan)
 
 
 app.include_router(health_router)

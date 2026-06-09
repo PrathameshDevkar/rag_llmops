@@ -5,16 +5,11 @@ from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from typing import Iterator
-from dotenv import load_dotenv
 import os
 from colorama import Fore
+from backend.app.services.model_loader import get_llm
 
-load_dotenv()
-
-api_key=os.getenv("HUGGINGFACE_API_KEY")
-
-llm = HuggingFaceEndpoint(model="meta-llama/Llama-3.1-8B-Instruct",huggingfacehub_api_token=api_key)
-model = ChatHuggingFace(llm=llm)
+model = get_llm()
 
 def retrieval_node(state:RAGState) -> RAGState:
     db=SessionLocal()
