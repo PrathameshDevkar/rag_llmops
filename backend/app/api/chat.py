@@ -7,6 +7,7 @@ from backend.app.models.conversations import Conversation
 from backend.app.core.auth import get_current_user
 from backend.app.schemas.chat import ChatRequest, ChatResponse
 from backend.app.services.conversation_services import (create_conversation, add_message, get_conversation_messages,generate_conversation_title)
+from backend.app.services.memory_service import add_episodic_memory
 from backend.app.rag.graph import build_graph
 from backend.app.rag.checkpoint import get_checkpointer
 from fastapi.responses import StreamingResponse
@@ -80,6 +81,7 @@ def chat(
         "user_question": chat_in.question,
         "chat_history":chat_history,
         "retrieved_chunks":None,
+        "recalled_memories": None,
         "generated_answer":None
     }
     
@@ -110,6 +112,15 @@ def chat(
                     conversation_id,
                     role="assistant",
                     content=final_answer
+                )
+                
+                chat_turn_text = f"User:{chat_in.question}\nAssistant:{final_answer}"
+                
+                add_episodic_memory(
+                    db=db,
+                    user_id = str(current_user.id),
+                    conversation_id = conversation_id,
+                    chat_turn_text = chat_turn_text
                 )
                 
     return StreamingResponse(

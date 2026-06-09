@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from backend.app.core.database import Base
 
@@ -12,6 +13,12 @@ class User(Base):
     password_hash = Column(String, nullable=False)
 
 
+    # #ORM Relationships
+    # document = relationship("Document", back_populates="users", cascade="all, delete-orphan")
+    # conversations = relationship("Conversation", back_populates="users", cascade="all, delete-orphan")
+    # memories = relationship("Memories", back_populates="users", cascade = "all, delete-orphan")
+    
+    
 """
 
 class User(Base):
