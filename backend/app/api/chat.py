@@ -141,8 +141,10 @@ from backend.app.models.user import User
 from backend.app.schemas.chat import ChatRequest, ChatResponse
 from backend.app.services.chat_service import ChatService # Import service layer
 
+from backend.app.core.logging import GLOBAL_LOGGER as log
+
 router = APIRouter(prefix="/chat", tags=["chat"])
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 @router.post("", response_model=ChatResponse)
 def chat(
@@ -153,7 +155,6 @@ def chat(
 ):
     # Enforce fast edge-validation constraints
     if not chat_in.conversation_id and not chat_in.document_id:
-        logger.warning(f"Rejected malformed chat submission from user workspace: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="document_id is required to start a conversation"
