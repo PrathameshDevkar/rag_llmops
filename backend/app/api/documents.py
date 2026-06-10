@@ -10,6 +10,7 @@ from backend.app.models.document import Document
 from backend.app.models.base import Chunk
 from backend.app.services.pdf_loader_chunker import load_and_chunk_pdf
 from backend.app.services.embeddings import embed_text
+from backend.app.repositories.document_repository import DocumentRepository
 from colorama import Fore
 
 router=APIRouter(prefix="/documents",tags=["documents"])
@@ -30,10 +31,8 @@ def upload_document(
         filename=file.filename,
         file_path=""
     )
-
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    document_repo = DocumentRepository(db)
+    document_repo.create(document)
     
     #create user folder
     user_folder=f"backend/pdf_storage_2/{current_user.id}"
@@ -79,15 +78,9 @@ def list_documents(
         db: Session=Depends(get_db),
         current_user: User= Depends(get_current_user)
             ):
-    documents=(
-        db.query(Document)
-        .filter(Document.user_id==current_user.id)
-        .order_by(Document.uploaded_at.desc())
-        .all()
-    )
-    for doc in documents:
-        print("*"*50)
-                    
+    document_repo = DocumentRepository(db)
+    documents=document_repo.get_user_documents(user_id = str(current_user.id))
+                        
     return [
         {
             "document_id":str(doc.id),

@@ -6,6 +6,7 @@ from backend.app.schemas.login_auth import LoginRequest
 from backend.app.models.user import User
 from backend.app.core.security import verify_password
 from backend.app.core.auth import create_access_token
+from backend.app.repositories.user_repository import UserRepository
 
 router=APIRouter(prefix="/auth", tags=["auth"])
 
@@ -17,13 +18,11 @@ def login(
     print("inside the login")
     print("*"*20)
     print("credentials are",credentials)
-    user=(
-        db.query(User)
-        .filter(User.username==credentials.username)
-        .first()
-    )
     
-    if not user or not verify_password(credentials.password,user.password_hash):
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_username(credentials.username)
+    
+    if not user or not verify_password(credentials.password,str(user.password_hash)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"

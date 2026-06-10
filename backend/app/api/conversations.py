@@ -14,19 +14,14 @@ def list_conversation(
     document_id: str= Query(...),
     current_user: User= Depends(get_current_user)
 ):
-
-    conversations= (
-        db.query(Conversation)
-        .filter(
-            Conversation.user_id==current_user.id,
-            Conversation.document_id==document_id
-        )
-        .order_by(Conversation.created_at.desc())
-        .all()
-    )        
+    conversations = [
+    c for c in current_user.conversations 
+    if str(c.document_id) == document_id
+    ]    
     return [
         {
             "conversation_id":str(conv.id),
+            "title": conv.title,
             "created_at":conv.created_at
         }
         for conv in conversations

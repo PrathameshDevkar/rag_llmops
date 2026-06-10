@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 from backend.app.core.database import Base
+from sqlalchemy.orm import relationship
 
 class Document(Base):
     __tablename__ = 'documents'
@@ -20,3 +21,7 @@ class Document(Base):
     file_path=Column(String,nullable=False)
     
     uploaded_at=Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="documents")
+    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="document", cascade="all, delete-orphan")

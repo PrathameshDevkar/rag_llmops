@@ -13,10 +13,10 @@ class User(Base):
     password_hash = Column(String, nullable=False)
 
 
-    # #ORM Relationships
-    # document = relationship("Document", back_populates="users", cascade="all, delete-orphan")
-    # conversations = relationship("Conversation", back_populates="users", cascade="all, delete-orphan")
-    # memories = relationship("Memories", back_populates="users", cascade = "all, delete-orphan")
+    #ORM Relationships
+    documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    memories = relationship("Memories", back_populates="user", cascade = "all, delete-orphan")
     
     
 """

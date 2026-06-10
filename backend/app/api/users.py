@@ -6,6 +6,7 @@ from backend.app.core.database import get_db
 from backend.app.models.user import User
 from backend.app.schemas.user import UserCreate
 from backend.app.core.security import hash_password
+from backend.app.repositories.user_repository import UserRepository
 
 router = APIRouter(prefix="/users",tags=["users"])
 """prefix="/users" → clean REST API
@@ -27,11 +28,10 @@ def create_user(user_in:UserCreate,db: Session = Depends(get_db)):
 
 
     try:
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        # Add this right after db.refresh(user)
-        count = db.query(User).count()
+        user_repo = UserRepository(db)
+        
+        user_repo.create(user)
+        count = user_repo.count_users()
         print(f"Total users in DB: {count}")
     except IntegrityError:
         db.rollback()

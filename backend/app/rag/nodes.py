@@ -58,7 +58,8 @@ def retrieval_node(state:RAGState) -> RAGState:
 def generate_node(state:RAGState) -> Iterator[RAGState]:
     
     memory_strings = []
-    
+    print(Fore.CYAN + f"\n\n=============recalled memories are:{state['recalled_memories']}===========" + Fore.RESET )
+
     if state.get("recalled_memories"):
         for memory in state["recalled_memories"]:
             memory_strings.append(
@@ -90,7 +91,7 @@ def generate_node(state:RAGState) -> Iterator[RAGState]:
     # return {**state,
     #         "generated_answer":result}
     partial_answer = ""
-    print(Fore.YELLOW + f"\n\nchat history is:{state['chat_history']}\n\n" + Fore.RESET)
+    print(Fore.CYAN + f"\n\nchat history is:{state['chat_history']}\n\n" + Fore.RESET)
     
     for chunk in chain.stream({
         "context": "\n".join(state["retrieved_chunks"]),

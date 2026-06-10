@@ -8,6 +8,9 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
 from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
+
+from colorama import Fore
 
 def create_access_token(subject:str, expires_minutes:int=60) -> str:
     if expires_minutes is None:
@@ -25,7 +28,7 @@ def decode_access_token(token:str) -> str:
         payload=jwt.decode(token,settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
         return payload.get("sub")
     except JWTError:
-        return None
+        return ""
     
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -49,8 +52,8 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
-    
-    user=db.query(User).filter(User.id==user_id).first()
+    user_repo = UserRepository(db)
+    user=user_repo.get_by_id(user_id = user_id)
     
     if user is None:
         raise HTTPException(

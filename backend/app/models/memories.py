@@ -3,7 +3,7 @@ from sqlalchemy import Column, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
-
+from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
 
 class Memories(Base):
@@ -16,3 +16,6 @@ class Memories(Base):
     content = Column(Text, nullable=False)
     embedding=Column(Vector)
     created_at=Column(DateTime(timezone=True),server_default=func.now())
+
+    user = relationship("User", back_populates="memories")
+    conversation = relationship("Conversation", back_populates="memories")

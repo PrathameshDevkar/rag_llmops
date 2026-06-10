@@ -278,8 +278,17 @@ def fetch_conversations(document_id):
         params={"document_id": document_id},
         headers=auth_headers()
     )
-    st.session_state.conversations = res.json() if res.status_code == 200 else []
-
+    if res.status_code == 200:
+            data = res.json()
+            st.session_state.conversations = data
+            
+            # Re-populate the frontend title cache dynamically from persistent records
+            for c in data:
+                if c.get("title"):
+                    st.session_state.conversation_titles[c["conversation_id"]] = c["title"]
+    else:
+        st.session_state.conversations = []
+        
 def fetch_messages(conversation_id):
     res = requests.get(
         f"{BACKEND_URL}/messages",

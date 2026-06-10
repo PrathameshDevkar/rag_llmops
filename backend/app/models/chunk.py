@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import Column, ForeignKey, Text, Integer,JSON
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
-
+from sqlalchemy.orm import relationship
 from backend.app.core.database import Base
 
 class Chunk(Base):
@@ -17,3 +17,5 @@ class Chunk(Base):
     content_metadata = Column(JSON, nullable=True)
     
     embedding = Column(Vector(384))
+
+    document = relationship("Document", back_populates="chunks")

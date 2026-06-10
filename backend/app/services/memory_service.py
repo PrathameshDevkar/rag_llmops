@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from litellm import completion
 from backend.app.core.config import settings
 from backend.app.models.memories import Memories
+from backend.app.repositories.memories_repositories import MemoriesRepository
 from backend.app.services.model_loader import get_embedding_model
 from colorama import Fore
 
@@ -112,8 +113,8 @@ def add_episodic_memory(db:Session, user_id: str, conversation_id:str, chat_turn
             embedding = conv_summary_emb
         )
         
-        db.add(db_memory)
-        db.commit()
+        memories_repo = MemoriesRepository(db)
+        memories_repo.create(db_memory)
         print(Fore.YELLOW + "episodic memory added succesfully" + Fore.RESET)
         
     except Exception as e:

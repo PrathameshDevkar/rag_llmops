@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 from backend.app.core.database import Base
-
+from sqlalchemy.orm import relationship
 class Messages(Base):
     __tablename__= "messages"
     
@@ -17,5 +17,4 @@ class Messages(Base):
     
     created_at=Column(DateTime(timezone=True),server_default=func.now())
     
-    
-    
+    conversation = relationship("Conversation", back_populates="messages")    
