@@ -1,23 +1,78 @@
 ========================================
+ Folder: logging
+ FILE: custom_logger.py (Comments Removed)
+========================================
+class CustomLogger:
+    def __init__(self, log_dir="logs"):
+        self.logs_dir = os.path.join(os.getcwd(), log_dir)
+        os.makedirs(self.logs_dir, exist_ok=True)
+        log_file = f"{datetime.now().strftime('%m_%d_%Y_%H_%M_%S')}.log"
+        self.log_file_path = os.path.join(self.logs_dir, log_file)
+
+    def get_logger(self, name=__file__):
+        logger_name = os.path.basename(name)
+
+        file_handler = logging.FileHandler(self.log_file_path)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter("%(message)s"))
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(logging.Formatter("%(message)s"))
+
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(message)s",
+            handlers=[console_handler, file_handler]
+        )
+
+        structlog.configure(
+            processors=[
+                structlog.processors.TimeStamper(fmt="iso", utc=True, key="timestamp"),
+                structlog.processors.add_log_level,
+                structlog.processors.EventRenamer(to="event"),
+                structlog.processors.JSONRenderer()
+            ],
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            cache_logger_on_first_use=True,
+        )
+
+        return structlog.get_logger(logger_name)
+
+
+========================================
  FILE: auth.py (Comments Removed)
 ========================================
+
 def create_access_token(subject:str, expires_minutes:int=60) -> str:
+    if expires_minutes is None:
+        expires_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
     expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload={
         "sub":subject,
         "exp":expire
     }
     
-    return jwt.encode(payload,SECRET_KEY,algorithm=ALGORITHM)
+    return jwt.encode(payload,settings.SECRET_KEY,algorithm=settings.ALGORITHM)
 
 def decode_access_token(token:str) -> str:
     try:
-        payload=jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
+        payload=jwt.decode(token,settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
         return payload.get("sub")
     except JWTError:
-        return None
+        return ""
     
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+"""
+🧠 What this does
+
+Tells FastAPI: “Token comes from Authorization: Bearer header”
+
+Automatically extracts the token string
+
+Powers Swagger’s Authorize 🔒 button
+"""
 
 def get_current_user(
     token:str=Depends(oauth2_scheme),
@@ -29,8 +84,8 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token"
         )
-    
-    user=db.query(User).filter(User.id==user_id).first()
+    user_repo = UserRepository(db)
+    user=user_repo.get_by_id(user_id = user_id)
     
     if user is None:
         raise HTTPException(
@@ -41,46 +96,108 @@ def get_current_user(
     return user
 
 
-
-
 ========================================
  FILE: config.py (Comments Removed)
 ========================================
+class Settings(BaseSettings):
+    # Project Metadata
+    PROJECT_NAME: str = "Langgraph RAG BACKEND"
+    
+    # Database Configuration
+    DB_HOST: str
+    DB_PORT: int = 5432
+    DB_NAME: str
+    DB_USER: str
+    DB_PASSWORD: str
+
+    # JWT / Security Configuration
+    SECRET_KEY: str = "dev-secret-change-in-prod"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    HUGGINGFACE_API_KEY: str
+    
+    # Auto-load configuration from .env file
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+    # Computed DB URLs
+    @computed_field
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql+psycopg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    @computed_field
+    @property
+    def psycopg_URL(self) -> str:
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
+    # Print verification block on init
+    def __init__(self, **values):
+        super().__init__(**values)
+        print(Fore.YELLOW + f"=============database name is: {self.DB_NAME}=================" + Fore.RESET)
 
 
-load_dotenv(dotenv_path=r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\backend\.env" ,override=True)
-
-class Settings:
-    PROJECT_NAME = "Langgraph RAG BACKEND"
-
-    def __init__(self):
-        self.DB_HOST = os.getenv("DB_HOST")
-        self.DB_PORT = os.getenv("DB_PORT")
-        self.DB_NAME = os.getenv("DB_NAME")
-        self.DB_USER = os.getenv("DB_USER")
-        self.DB_PASSWORD = os.getenv("DB_PASSWORD")
-
-        print("==========================================")
-        print("database name is", self.DB_NAME)
-
-        self.DATABASE_URL = (
-            f"postgresql+psycopg://{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        )
-
-        self.psycopg_URL = (
-            f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        )
-
+# Clean export for the rest of your app
 settings = Settings()
 
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
-ALGORITHM = os.getenv("JWT_ALGORITHM","HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("JWT_EXPIRE_MINUTES",60)
+========================================
+ FILE: custom_exception.py (Comments Removed)
+========================================
 
+class DocumentPortalException(Exception):
+    def __init__(self, error_message, error_details: Optional[object] = None):
+        # Normalize message
+        if isinstance(error_message, BaseException):
+            norm_msg = str(error_message)
+        else:
+            norm_msg = str(error_message)
 
+        # Resolve exc_info (supports: sys module, Exception object, or current context)
+        exc_type = exc_value = exc_tb = None
+        if error_details is None:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+        else:
+            if hasattr(error_details, "exc_info"):  # e.g., sys
+                #exc_type, exc_value, exc_tb = error_details.exc_info()
+                exc_info_obj = cast(sys, error_details)
+                exc_type, exc_value, exc_tb = exc_info_obj.exc_info()
+            elif isinstance(error_details, BaseException):
+                exc_type, exc_value, exc_tb = type(error_details), error_details, error_details.__traceback__
+            else:
+                exc_type, exc_value, exc_tb = sys.exc_info()
+
+        # Walk to the last frame to report the most relevant location
+        last_tb = exc_tb
+        while last_tb and last_tb.tb_next:
+            last_tb = last_tb.tb_next
+
+        self.file_name = last_tb.tb_frame.f_code.co_filename if last_tb else "<unknown>"
+        self.lineno = last_tb.tb_lineno if last_tb else -1
+        self.error_message = norm_msg
+
+        # Full pretty traceback (if available)
+        if exc_type and exc_tb:
+            self.traceback_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_tb))
+        else:
+            self.traceback_str = ""
+
+        super().__init__(self.__str__())
+
+    def __str__(self):
+        # Compact, logger-friendly message (no leading spaces)
+        base = f"Error in [{self.file_name}] at line [{self.lineno}] | Message: {self.error_message}"
+        if self.traceback_str:
+            return f"{base}\nTraceback:\n{self.traceback_str}"
+        return base
+
+    def __repr__(self):
+        return f"DocumentPortalException(file={self.file_name!r}, line={self.lineno}, message={self.error_message!r})"
+        
 ========================================
  FILE: database.py (Comments Removed)
 ========================================

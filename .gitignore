@@ -228,3 +228,18 @@ rag-kubernetes.docx
 ~$g-kubernetes.docx
 
 backend/app/main_and_app.txt
+backend/app/api.txt
+backend/app/core.txt
+backend/app/models.txt
+backend/app/rag.txt
+backend/app/services.txt
+backend/app/repositories.txt
+backend/app/migration.txt
+backend/app/api.txt
+.env.test
+backend/tests/api.txt
+backend/tests/integration.txt
+backend/tests/rag.txt
+backend/tests/unit.txt
+
+

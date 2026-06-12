@@ -13,87 +13,106 @@ from backend .app .models .memories import Memories
 ========================================
  FILE: chunk.py (Comments Removed)
 ========================================
+import uuid
+from sqlalchemy import Column, ForeignKey, Text, Integer,JSON
+from sqlalchemy.dialects.postgresql import UUID
+from pgvector.sqlalchemy import Vector
+from sqlalchemy.orm import relationship
+from backend.app.core.database import Base
 
-from backend .app .core .database import Base 
+class Chunk(Base):
+    __tablename__ = "chunks" 
+    
+    id= Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    document_id=Column(UUID(as_uuid=True), ForeignKey("documents.id",ondelete="CASCADE"),
+                       nullable=False)
+    chunk_index=Column(Integer, nullable=False)
+    content=Column(Text,nullable=False)
+    content_metadata = Column(JSON, nullable=True)
+    
+    embedding = Column(Vector(384))
 
-class Chunk (Base ):
-    __tablename__ ="chunks"
-
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-
-    document_id =Column (UUID (as_uuid =True ),ForeignKey ("documents.id",ondelete ="CASCADE"),
-    nullable =False )
-    chunk_index =Column (Integer ,nullable =False )
-    content =Column (Text ,nullable =False )
-    content_metadata =Column (JSON ,nullable =True )
-
-    embedding =Column (Vector (384 ))
-
+    document = relationship("Document", back_populates="chunks")
 
 ========================================
  FILE: conversations.py (Comments Removed)
 ========================================
-from backend .app .core .database import Base 
 
-class Conversation (Base ):
-    __tablename__ ="conversations"
-
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-    user_id =Column (UUID (as_uuid =True ),ForeignKey ("users.id",ondelete ="CASCADE"),nullable =False )
-    document_id =Column (UUID (as_uuid =True ),ForeignKey ("documents.id",ondelete ="CASCADE"),nullable =False )
-
-    created_at =Column (DateTime (timezone =True ),server_default =func .now ())
-
+class Conversation(Base):
+    __tablename__ = "conversations"
+    
+    id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
+    user_id=Column(UUID(as_uuid=True),ForeignKey("users.id",ondelete="CASCADE"),nullable=False)
+    document_id=Column(UUID(as_uuid=True),ForeignKey("documents.id",ondelete="CASCADE"),nullable=False)
+    title = Column(String, nullable=True)
+    created_at=Column(DateTime(timezone=True),server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="conversations")
+    document = relationship("Document", back_populates="conversations")
+    messages = relationship("Messages", back_populates="conversation", cascade="all, delete-orphan", order_by="Messages.created_at")
+    memories = relationship("Memories", back_populates="conversation", cascade="all, delete-orphan")
+    
 ========================================
  FILE: document.py (Comments Removed)
 ========================================
-class Document (Base ):
-    __tablename__ ='documents'
 
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-
-    user_id =Column (
-    UUID (as_uuid =True ),
-    ForeignKey ("users.id",ondelete ="CASCADE"),
-    nullable =False 
+class Document(Base):
+    __tablename__ = 'documents'
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    user_id=Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id",ondelete="CASCADE"),
+        nullable=False
     )
-
-    filename =Column (String ,nullable =False )
-    file_path =Column (String ,nullable =False )
-
-    uploaded_at =Column (DateTime (timezone =True ),server_default =func .now ())
+    
+    filename=Column(String,nullable=False)
+    file_path=Column(String,nullable=False)
+    
+    uploaded_at=Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="documents")
+    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="document", cascade="all, delete-orphan")
 
 ========================================
  FILE: memories.py (Comments Removed)
 ========================================
 
-class Memories (Base ):
-    __tablename__ ="memories"
+class Memories(Base):
+    __tablename__ = "memories"
+     
+    id = Column(UUID(as_uuid=True),primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True),ForeignKey("users.id",ondelete="CASCADE"),nullable=False)
+    conversation_id = Column(UUID(as_uuid=True),ForeignKey("conversations.id",ondelete="CASCADE"),nullable=False)
+    memory_type = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    embedding=Column(Vector)
+    created_at=Column(DateTime(timezone=True),server_default=func.now())
 
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-    user_id =Column (UUID (as_uuid =True ),ForeignKey ("users.id",ondelete ="CASCADE"),nullable =False )
-    conversation_id =Column (UUID (as_uuid =True ),ForeignKey ("conversations.id",ondelete ="CASCADE"),nullable =False )
-    memory_type =Column (Text ,nullable =False )
-    content =Column (Text ,nullable =False )
-    embedding =Column (Vector )
-    created_at =Column (DateTime (timezone =True ),server_default =func .now ())
-
+    user = relationship("User", back_populates="memories")
+    conversation = relationship("Conversation", back_populates="memories")
 
 ========================================
  FILE: messages.py (Comments Removed)
 ========================================
 
-class Messages (Base ):
-    __tablename__ ="messages"
-
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-
-    conversation_id =Column (UUID (as_uuid =True ),ForeignKey ("conversations.id",ondelete ="CASCADE"),nullable =False )
-
-    role =Column (Text ,nullable =False )
-    content =Column (Text ,nullable =False )
-
-    created_at =Column (DateTime (timezone =True ),server_default =func .now ())
+class Messages(Base):
+    __tablename__= "messages"
+    
+    id=Column(UUID(as_uuid=True),primary_key=True ,default=uuid.uuid4)
+    
+    conversation_id=Column(UUID(as_uuid=True),ForeignKey("conversations.id",ondelete="CASCADE"),nullable=False)
+    
+    role=Column(Text,nullable=False)
+    content=Column(Text,nullable=False)
+    
+    created_at=Column(DateTime(timezone=True),server_default=func.now())
+    
+    conversation = relationship("Conversation", back_populates="messages")    
 
 
 
@@ -102,10 +121,16 @@ class Messages (Base ):
  FILE: user.py (Comments Removed)
 ========================================
 
-class User (Base ):
-    __tablename__ ="users"
+class User(Base):
+    __tablename__ = "users"
 
-    id =Column (UUID (as_uuid =True ),primary_key =True ,default =uuid .uuid4 )
-    username =Column (String ,unique =True ,nullable =False )
-    password_hash =Column (String ,nullable =False )
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
 
+
+    #ORM Relationships
+    documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    memories = relationship("Memories", back_populates="user", cascade = "all, delete-orphan")
+    

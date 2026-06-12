@@ -1,4 +1,3 @@
-import logging
 from sqlalchemy.orm import Session
 from backend.app.repositories.conversation_repository import ConversationRepository
 from backend.app.services.conversation_services import create_conversation, generate_conversation_title, add_message
@@ -6,7 +5,6 @@ from backend.app.services.memory_service import add_episodic_memory
 from backend.app.core.logging import GLOBAL_LOGGER as log
 from backend.app.core.custom_exception import DocumentPortalException # Import exception tracking
 
-logger = logging.getLogger(__name__)
 
 class ChatService:
     def __init__(self, db: Session):
@@ -60,7 +58,7 @@ class ChatService:
             
             # Extract ordered transcripts using ORM relationships safely
             chat_history = [f"{m.role}={m.content}" for m in conversation.messages]
-            logger.info(f"Successfully compiled context history depth: {len(chat_history)} turns")
+            log.info(f"Successfully compiled context history depth: {len(chat_history)} turns")
 
             return {
                 "conversation_id": conversation_id,

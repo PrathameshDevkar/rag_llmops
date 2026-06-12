@@ -1,6 +1,12 @@
 ========================================
  FILE: checkpoint.py (Comments Removed)
-=======================================
+========================================
+
+from langgraph .checkpoint .postgres import PostgresSaver 
+from backend .app .core .config import settings 
+from backend .app .core .database import engine 
+from contextlib import contextmanager 
+
 @contextmanager 
 def get_checkpointer ():
     with PostgresSaver .from_conn_string (settings .psycopg_URL )as saver :
@@ -10,6 +16,11 @@ def get_checkpointer ():
 ========================================
  FILE: graph.py (Comments Removed)
 ========================================
+
+from langgraph .graph import StateGraph ,START ,END 
+from backend .app .rag .state import RAGState 
+from backend .app .rag .nodes import retrieval_node ,generate_node 
+
 def build_graph (checkpointer ):
 
     graph =StateGraph (RAGState )
@@ -28,64 +39,124 @@ def build_graph (checkpointer ):
 ========================================
  FILE: nodes.py (Comments Removed)
 ========================================
-load_dotenv()
 
-api_key=os.getenv("HUGGINGFACE_API_KEY")
+from backend .app .core .custom_exception import DocumentPortalException 
+from backend .app .core .database import SessionLocal 
+from backend .app .rag .state import RAGState 
+from backend .app .services .retrieval import chunks_retrieval ,memories_retrieval 
+from backend .app .services .embeddings import embed_text 
+from langchain_huggingface import HuggingFaceEndpoint ,ChatHuggingFace 
+from langchain_core .prompts import PromptTemplate 
+from langchain_core .output_parsers import StrOutputParser 
+from typing import Iterator 
+import os 
+from colorama import Fore 
+from backend .app .services .model_loader import get_llm 
+import json 
+import time 
 
-llm = HuggingFaceEndpoint(model="meta-llama/Llama-3.1-8B-Instruct",huggingfacehub_api_token=api_key)
-model = ChatHuggingFace(llm=llm)
+from backend .app .core .logging import GLOBAL_LOGGER as log 
 
-def retrieval_node(state:RAGState) -> RAGState:
-    db=SessionLocal()
-    
-    try:
-        results=similarity_search(
-            db=db,
-            query=state['user_question'],
-            document_id=state['document_id']
+
+model =get_llm ()
+
+def retrieval_node (state :RAGState )->RAGState :
+    db =SessionLocal ()
+    start_time =time .time ()
+
+    log .info ("vector_retrieval_started",user_id =state ['user_id'],document_id =state ['document_id'])
+    try :
+        query_embedding =embed_text (state ['user_question'])
+        chunks_results =chunks_retrieval (
+        db =db ,
+        query_embedding =query_embedding ,
+        document_id =state ['document_id']
         )
-        query=state['user_question']
-        document_id=state['document_id']
-        print(Fore.YELLOW + f"\n\n=====user_question in nodes.py is: {query}=========\n\n" + Fore.RESET)
-        print(Fore.YELLOW + f"\n\n=====document_id in nodes.py is : {document_id}=========\n\n" + Fore.RESET)
+        query =state ['user_question']
+        document_id =state ['document_id']
 
-        chunks=[r.content for r in results]
-        print(Fore.YELLOW + f"\n\n=====retrieved chunks in nodes.py are: {chunks}=========\n\n" + Fore.RESET)
-        
+        chunks =[r .content for r in chunks_results ]
+
+        memory_results =memories_retrieval (
+        db =db ,
+        query_embedding =query_embedding ,
+        user_id =state ['user_id']
+        )
+
+        recalled_memories =[]
+        for r in memory_results :
+            try :
+                recalled_memories .append (json .loads (r .content ))
+            except :
+                recalled_memories .append ({"conversation_summary":r .content })
+
+        elapsed_ms =(time .time ()-start_time )*1000 
+        log .info ("vector_retrieval_completed",
+        elapsed_ms =round (elapsed_ms ,2 ),
+        chunks_found =len (chunks ),
+        memories_found =len (recalled_memories ))
+
         return {
-            **state,
-            "retrieved_chunks":chunks
+        **state ,
+        "retrieved_chunks":chunks ,
+        "recalled_memories":recalled_memories 
         }
-    finally:
-        db.close()    
-        
-def generate_node(state:RAGState) -> Iterator[RAGState]:
-    
-    prompt=PromptTemplate(
-        template="""
+    except Exception as e :
+
+        log .error ("error in the retrieval node",error =str (e ))
+        raise DocumentPortalException (
+        "Critical retrieval execution fault inside LangGraph context node structure"
+        )
+    finally :
+        db .close ()
+
+def generate_node (state :RAGState )->Iterator [RAGState ]:
+
+    memory_strings =[]
+
+    if state .get ("recalled_memories"):
+        for memory in state ["recalled_memories"]:
+            memory_strings .append (
+            f"- Historical Turn: {memory.get('conversation_summary')}\n"
+            f"  Successful Context: {memory.get('what_worked')}\n"
+            f"  pitfall to avoid: {memory.get('what_to_avoid')}\n"
+            )
+    compiled_memories_context ="\n".join (memory_strings )if memory_strings else "No relevant historical context found"
+
+
+    history_window =state ["chat_history"][-5 :]if state ["chat_history"]else []
+
+    prompt =PromptTemplate (
+    template ="""
         you are a helpful assistant who gives answer to the given question based on the given context. 
         if you dont know the answer just say that you cannot answer the question.
         
-        conversation so far - {chat_history}
-        here is the context - {context}
-        here is the question - {question}""",
-        input_variables=['context','question','chat_history']
+        Recet chat history - {chat_history}
+        User behavioral profile and historical reflections - {recalled_memories}
+        Relevant context from uploaded documents - {context}
+        User question - {question}""",
+    input_variables =['context','question','chat_history','recalled_memories']
     )
-    
-    chain = prompt | model | StrOutputParser()
-    
-    partial_answer = ""
-    print(Fore.YELLOW + f"\n\nchat history is:{state['chat_history']}\n\n" + Fore.RESET)
-    
-    for chunk in chain.stream({
-        "context": "\n".join(state["retrieved_chunks"]),
-        "question": state["user_question"],
-        "chat_history": "\n".join(state["chat_history"]),
+
+    chain =prompt |model |StrOutputParser ()
+
+
+
+
+
+    partial_answer =""
+
+    for chunk in chain .stream ({
+    "context":"\n".join (state ["retrieved_chunks"]),
+    "question":state ["user_question"],
+    "chat_history":"\n".join (history_window ),
+
+    "recalled_memories":compiled_memories_context 
     }):
-        partial_answer += chunk
+        partial_answer +=chunk 
         yield {
-            **state,
-            "generated_answer": partial_answer
+        **state ,
+        "generated_answer":partial_answer 
         }
 
 
@@ -100,18 +171,8 @@ class RAGState (TypedDict ):
     document_id :str 
     user_question :str 
     retrieved_chunks :Optional [List [str ]]
+    recalled_memories :Optional [List [dict ]]
     generated_answer :Optional [str ]
     chat_history :Optional [List [str ]]
-
-
-
-
-
-
-
-
-
-
-
 
 

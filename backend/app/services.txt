@@ -1,18 +1,113 @@
 ========================================
+ FILE: chat_service.py (Comments Removed)
+========================================
+
+class ChatService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.conversation_repo = ConversationRepository(db)
+
+    def orchestrate_chat_state(self, chat_in, user_id: str):
+        """
+        Validates conversation state, fetches relevant context parameters,
+        and records the incoming user utterance record.
+        """
+        title = ""
+        document_id = ""
+
+        try:
+            # Branch 1: Appending to an existing conversation thread
+            if chat_in.conversation_id:
+                conversation_id = chat_in.conversation_id
+                conversation = self.conversation_repo.get_by_id(conversation_id=conversation_id, user_id=user_id)
+                
+                if not conversation:
+                    log.error("conversation_access_denied", conversation_id=conversation_id, user_id=user_id)
+                    return None
+                    
+                document_id = str(conversation.document_id)
+                log.info("existing conversation thread conversation loaded", conversation_id=conversation_id, document_id=document_id)
+                
+            # Branch 2: Constructing a brand new interaction workspace
+            else:
+                conversation = create_conversation(
+                    self.db,
+                    user_id=user_id,
+                    document_id=chat_in.document_id
+                )
+                document_id = chat_in.document_id
+                conversation_id = str(conversation.id)
+                title = generate_conversation_title(chat_in.question)
+                
+                conversation.title = title
+                self.db.commit()
+                
+                log.info("new conversation thread created", conversation_id=conversation_id, document_id=document_id, title=title)
+
+            # Persist user question statement
+            add_message(
+                db=self.db,
+                conversation_id=conversation_id,
+                role="user",
+                content=chat_in.question
+            )
+            
+            # Extract ordered transcripts using ORM relationships safely
+            chat_history = [f"{m.role}={m.content}" for m in conversation.messages]
+            logger.info(f"Successfully compiled context history depth: {len(chat_history)} turns")
+
+            return {
+                "conversation_id": conversation_id,
+                "document_id": document_id,
+                "title": title,
+                "chat_history": chat_history
+            }
+
+        except Exception as e:
+            log.error("failed to assemble chat database transaction boundries", error= str(e))
+            raise DocumentPortalException(
+                error_message = "failed to assemble chat database transaction boundries",
+                error_details = e
+            )
+    def execute_post_chat_cleanup(self, user_id: str, conversation_id: str, question: str, final_answer: str):
+        """ Handles secondary persistence operations outside the streaming runtime loop """
+        try:    
+            log.info("Post chat cleanup started", conversation_id = conversation_id, user_id = user_id)
+            # 1. Commit assistant statement to tracking ledger
+            add_message(
+                self.db,
+                conversation_id,
+                role="assistant",
+                content=final_answer
+            )
+            
+            # 2. Extract and preserve background episodic profile memory
+            chat_turn_text = f"User: {question}\nAssistant: {final_answer}"
+            add_episodic_memory(
+                db=self.db,
+                user_id=user_id,
+                conversation_id=conversation_id,
+                chat_turn_text=chat_turn_text
+            )
+            log.info("post_chat_cleanup_success", conversation_id=conversation_id)
+        
+        except Exception as e:
+            log.error("Background episodic memory capture failed", error=str(e))
+            raise DocumentPortalException("Background episodic memory capture failed")
+
+
+
+========================================
  FILE: conversation_services.py (Comments Removed)
 ========================================
 
-
-api_key = os.getenv("HUGGINGFACE_API_KEY")
-llm = HuggingFaceEndpoint(
-    model="meta-llama/Llama-3.1-8B-Instruct",
-    huggingfacehub_api_token=api_key
-)
-model = ChatHuggingFace(llm=llm)
+model = get_llm()
 
 def generate_conversation_title(question: str) -> str:
     prompt = f"Generate a short 5-7 word title that summarizes this question. Return only the title, nothing else:\n\n{question}"
     response = model.invoke([HumanMessage(content=prompt)])
+    print(Fore.CYAN + f"\n\nresponse:{response.content}\ntype is{type(response.content)}\n\n" + Fore.RESET)
+
     title = response.content.strip()
     # safety fallback in case LLM returns something too long
     if len(title) > 60:
@@ -29,9 +124,8 @@ def create_conversation(
         user_id=user_id,
         document_id=document_id
     )
-    db.add(conv)
-    db.commit()
-    db.refresh(conv)
+    conversation_repo = ConversationRepository(db)
+    conversation_repo.create(conv)
     return conv
 
 def add_message(
@@ -46,32 +140,176 @@ def add_message(
         role=role,
         content=content
     )
-    
-    db.add(msg)
-    db.commit()
-    
-    
-def get_conversation_messages(
-    db:Session,
-    conversation_id=str
-):
-    return (
-        db.query(Messages)
-        .filter(Messages.conversation_id==conversation_id)
-        .order_by(Messages.created_at)
-        .all()
-    )
+    messages_repo = MessagesRepository(db)
+    messages_repo.create(msg)
+
+
 ========================================
  FILE: embeddings.py (Comments Removed)
 ========================================
-embedding_model =HuggingFaceEmbeddings (model_name ="sentence-transformers/all-MiniLM-l6-v2")
-def embed_text (text :str )->list [float ]:
-    try :
-        embeddings =embedding_model .embed_query (text )
-        return embeddings 
-    except Exception as e :
-        print ("error during the embeddings generation",e )
+embedding_model= get_embedding_model()
+def embed_text(text:str) -> list[float]:
+    try:
+        embeddings=embedding_model.embed_query(text)
+        return embeddings
+    except Exception as e:
+        print("error during the embeddings generation",e)
         return []
+    
+
+========================================
+ FILE: memory_service.py (Comments Removed)
+========================================
+import json
+from sqlalchemy.orm import Session
+from litellm import completion
+from backend.app.core.config import settings
+from backend.app.models.memories import Memories
+from backend.app.repositories.memories_repositories import MemoriesRepository
+from backend.app.services.model_loader import get_embedding_model
+from colorama import Fore
+
+reflection_prompt_template="""
+You are analyzing conversations about research papers to create memories that will help guide future interactions. Your task is to extract key elements that would be most helpful when encountering similar academic discussions in the future.
+
+Review the conversation and create a memory reflection following these rules:
+
+1. For any field where you don't have enough information or the field isn't relevant, use "N/A"
+2. Be extremely concise - each string should be one clear, actionable sentence
+3. Focus only on information that would be useful for handling similar future conversations
+4. Context_tags should be specific enough to match similar situations but general enough to be reusable
+
+Output valid JSON in exactly this format:
+{{
+    "context_tags": [              // 2-4 keywords that would help identify similar future conversations
+        string,                    // Use field-specific terms like "deep_learning", "methodology_question", "results_interpretation"
+        ...
+    ],
+    "conversation_summary": string, // summary of describing what the conversation accomplished
+    "what_worked": string,         // Most effective approach or strategy used in this conversation
+    "what_to_avoid": string        // Most important pitfall or ineffective approach to avoid
+}}
+
+Examples:
+- Good context_tags: ["transformer_architecture", "attention_mechanism", "methodology_comparison"]
+- Bad context_tags: ["machine_learning", "paper_discussion", "questions"]
+
+- Good conversation_summary: "Explained how the attention mechanism in the BERT paper differs from traditional transformer architectures"
+- Bad conversation_summary: "Discussed a machine learning paper"
+
+- Good what_worked: "Using analogies from matrix multiplication to explain attention score calculations"
+- Bad what_worked: "Explained the technical concepts well"
+
+- Good what_to_avoid: "Diving into mathematical formulas before establishing user's familiarity with linear algebra fundamentals"
+- Bad what_to_avoid: "Used complicated language"
+
+Additional examples for different research scenarios:
+
+Context tags examples:
+- ["experimental_design", "control_groups", "methodology_critique"]
+- ["statistical_significance", "p_value_interpretation", "sample_size"]
+- ["research_limitations", "future_work", "methodology_gaps"]
+
+Conversation summary examples:
+- "Clarified why the paper's cross-validation approach was more robust than traditional hold-out methods"
+- "Helped identify potential confounding variables in the study's experimental design"
+
+What worked examples:
+- "Breaking down complex statistical concepts using visual analogies and real-world examples"
+- "Connecting the paper's methodology to similar approaches in related seminal papers"
+
+What to avoid examples:
+- "Assuming familiarity with domain-specific jargon without first checking understanding"
+- "Over-focusing on mathematical proofs when the user needed intuitive understanding"
+
+Do not include any text outside the JSON object in your response.
+"""
+
+def add_episodic_memory(db:Session, user_id: str, conversation_id:str, chat_turn_text:str):
+    """
+    Analyzes a cht turn using litellm, extracts structure episodic metadata, 
+    embeds it and saves it to production pgvector memories table
+    """
+    
+    embedding_model = get_embedding_model()
+    
+    messages = [
+        {"role":"system", "content":reflection_prompt_template},
+        {"role":"user","content":f"Analyze this interaction:\n{chat_turn_text}"}
+    ]
+    
+    try:
+        response = completion(
+            model = "huggingface/meta-llama/Llama-3.1-8B-Instruct",
+            messages=messages,
+            api_key=settings.HUGGINGFACE_API_KEY
+        )
+        
+        cleaned_content = response.choices[0].message.content.strip()
+        
+        #clean up the markdown json blocks given by the model
+        if cleaned_content.startswith("```json"):
+            cleaned_content = cleaned_content[7:-3].strip()
+        elif cleaned_content.startswith("```"):
+            cleaned_content = cleaned_content[3:-3].strip()
+            
+        result = json.loads(cleaned_content)
+        
+        #embed the summary text for vector similarity matching later
+        text_to_embed = result.get("conversation_summary","N/A")
+        conv_summary_emb = embedding_model.embed_query(text_to_embed)
+        
+        #bundle the full structure result into a json string for teh DB text field
+        compiled_content = json.dumps({
+            "context_tags":result.get("contenxt_tags",[]),
+            "conversation_summary":text_to_embed,
+            "what_worked":result.get("what_worked","N/A"),
+            "what_to_avoid":result.get("what_to_avoid","N/A")
+        })
+        
+        db_memory = Memories(
+            user_id = user_id,
+            conversation_id = conversation_id,
+            memory_type = "episodic_memory",
+            content = compiled_content,
+            embedding = conv_summary_emb
+        )
+        
+        memories_repo = MemoriesRepository(db)
+        memories_repo.create(db_memory)
+        print(Fore.YELLOW + "episodic memory added succesfully" + Fore.RESET)
+        
+    except Exception as e:
+        db.rollback()
+        print(Fore.RED + f"error during adding the episodic memory in dataabse:\n{e}" + Fore.RESET)
+        
+    
+
+
+
+
+========================================
+ FILE: model_loader.py (Comments Removed)
+========================================
+
+@lru_cache
+def get_llm():
+
+    llm = HuggingFaceEndpoint(
+        model="meta-llama/Llama-3.1-8B-Instruct",
+        huggingfacehub_api_token=settings.HUGGINGFACE_API_KEY
+    )
+
+    return ChatHuggingFace(llm=llm)
+
+
+@lru_cache
+def get_embedding_model():
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+
 
 
 ========================================
@@ -92,12 +330,6 @@ chunk_overlap :int =100
     chunks =chunker .chunk (dl_doc =docling_docs )
 
     docs =[]
-    i =0 
-    for chunk in chunks :
-        if i ==3 :
-            break 
-        print (Fore .YELLOW +f"\n\nchunk during uploading is:{chunk}\n\n"+Fore .RESET )
-        i +=1 
     for chunk in chunks :
         headings =chunk .meta .__dict__ .get ("headings")or []
         heading =headings [0 ]or None 
@@ -111,15 +343,14 @@ chunk_overlap :int =100
  FILE: retrieval.py (Comments Removed)
 ========================================
 
-def similarity_search(
+def chunks_retrieval(
     db: Session,
-    query:str,
+    query_embedding:list[float],
     document_id:str,
     top_k:int=5
 ):
-    query_embedding=embed_text(query)
     
-    sql=text("""
+    chunks_sql=text("""
         SELECT content,content_metadata
         FROM chunks
         WHERE document_id = :document_id
@@ -127,11 +358,35 @@ def similarity_search(
         LIMIT :top_k
         """)
     results=db.execute(
-        sql,
+        chunks_sql,
         {
             "document_id":document_id,
             "query_embedding":query_embedding,
             "top_k":top_k
+        }
+    ).fetchall()
+    
+    return results
+
+def memories_retrieval(
+    db:Session,
+    query_embedding:list[float],
+    user_id: str,
+    top_k :int =5 
+):
+    memory_sql = text("""
+                      SELECT content from memories
+                      WHERE user_id = :user_id AND memory_type = 'episodic_memory'
+                      ORDER BY embedding <=> CAST(:query_embedding AS vector)
+                      LIMIT :top_k
+                      """)
+    
+    results = db.execute(
+        memory_sql,
+        {
+            "user_id": user_id,
+            "query_embedding": query_embedding,
+            "top_k" : top_k
         }
     ).fetchall()
     

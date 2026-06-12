@@ -2,6 +2,7 @@
  FILE: auth.py
 ========================================
 
+
 router=APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login")
@@ -12,13 +13,11 @@ def login(
     print("inside the login")
     print("*"*20)
     print("credentials are",credentials)
-    user=(
-        db.query(User)
-        .filter(User.username==credentials.username)
-        .first()
-    )
     
-    if not user or not verify_password(credentials.password,user.password_hash):
+    user_repo = UserRepository(db)
+    user = user_repo.get_by_username(credentials.username)
+    
+    if not user or not verify_password(credentials.password,str(user.password_hash)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
@@ -34,122 +33,75 @@ def login(
  FILE: chat.py (Comments Removed)
 ========================================
 
-router = APIRouter(prefix="/chat",tags=["chat"])
-@router.post("",response_model=ChatResponse)
+router = APIRouter(prefix="/chat", tags=["chat"])
+# logger = logging.getLogger(__name__)
+
+@router.post("", response_model=ChatResponse)
 def chat(
-    chat_in:ChatRequest,
+    chat_in: ChatRequest,
     request: Request,
-    db: Session=Depends(get_db),
-    current_user: User=Depends(get_current_user)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    title = ""
-    document_id = ""
-    #validate input
+    # Enforce fast edge-validation constraints
     if not chat_in.conversation_id and not chat_in.document_id:
-        return HTTPException(
-            status_code=400,
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="document_id is required to start a conversation"
         )
     
-    print(Fore.YELLOW + f"\n\n=====conversation_id in api/chat.py is: {chat_in.conversation_id}=========\n\n" + Fore.RESET)
-    print(Fore.YELLOW + f"\n\n=====document_id in api/chat.py is : {chat_in.document_id}=========\n\n" + Fore.RESET)
-
-    if chat_in.conversation_id:
-        conversation_id=chat_in.conversation_id
-        conversation = (
-            db.query(Conversation)
-            .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
-            .first()
-        )
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-        
-        # Derive document_id safely from backend state, ignoring whatever the frontend sent
-        document_id = str(conversation.document_id)
-        
-    else:
-        conversation= create_conversation(
-            db,
-            user_id=current_user.id,
-            document_id=chat_in.document_id
-        )
-        document_id = chat_in.document_id
-        conversation_id=str(conversation.id)
-        title = generate_conversation_title(chat_in.question)
-                
-    add_message(
-        db=db,
-        conversation_id=conversation_id,
-        role= "user",
-        content=chat_in.question
-    )
+    # Instantiate service layer
+    chat_service = ChatService(db)
     
-    messages=get_conversation_messages(db,conversation_id)
+    # Delegate core context processing execution steps to the service manager
+    context_bundle = chat_service.orchestrate_chat_state(chat_in, user_id=str(current_user.id))
+    if not context_bundle:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation lookup context invalid")
+        
+    conversation_id = context_bundle["conversation_id"]
     
-    chat_history=[
-        f"{m.role}={m.content}"
-        for m in messages
-    ]
-    print(Fore.YELLOW + f"\n\n===========chat history in api/chat.py is: {chat_history}===================\n\n" + Fore.RESET)
+    # Initialize state map matching your graph parameters
+    state = {
+        "user_id": str(current_user.id),
+        "document_id": context_bundle["document_id"],
+        "user_question": chat_in.question,
+        "chat_history": context_bundle["chat_history"],
+        "retrieved_chunks": None,
+        "recalled_memories": None,
+        "generated_answer": None
+    }
     
     graph = request.app.state.graph
-    
-    state={
-        "user_id":str(current_user.id),
-        "document_id":document_id,
-        "user_question": chat_in.question,
-        "chat_history":chat_history,
-        "retrieved_chunks":None,
-        "recalled_memories": None,
-        "generated_answer":None
-    }
     
     def event_generator():
         final_answer = ""
         try:
-            for event,metadata in graph.stream(
+            for event, metadata in graph.stream(
                 state,
-                config={
-                    "configurable": {
-                        "thread_id": conversation_id
-                    }
-                },
+                config={"configurable": {"thread_id": conversation_id}},
                 stream_mode='messages'
             ):
-
-                if isinstance(event,AIMessage):
-
-                    final_answer+= event.content
+                if isinstance(event, AIMessage):
+                    final_answer += event.content
                     yield event.content
-        
-        
         finally:
-                       
             if final_answer:
-                add_message(
-                    db,
-                    conversation_id,
-                    role="assistant",
-                    content=final_answer
-                )
-                
-                chat_turn_text = f"User:{chat_in.question}\nAssistant:{final_answer}"
-                
-                add_episodic_memory(
-                    db=db,
-                    user_id = str(current_user.id),
-                    conversation_id = conversation_id,
-                    chat_turn_text = chat_turn_text
+                # Delegate secondary background processing out of the stream execution line
+                chat_service.execute_post_chat_cleanup(
+                    user_id=str(current_user.id),
+                    conversation_id=conversation_id,
+                    question=chat_in.question,
+                    final_answer=final_answer
                 )
                 
     return StreamingResponse(
-    event_generator(),
-    media_type="text/plain",
-    headers={"x-conversation-id": conversation_id,
-             "x-conversation-title":title if title else conversation_id[:8]
-             }
+        event_generator(),
+        media_type="text/plain",
+        headers={
+            "x-conversation-id": conversation_id,
+            "x-conversation-title": context_bundle["title"] if context_bundle["title"] else conversation_id[:8]
+        }
     )
-
 ========================================
  FILE: conversations.py (Comments Removed)
 ========================================
@@ -162,19 +114,14 @@ def list_conversation(
     document_id: str= Query(...),
     current_user: User= Depends(get_current_user)
 ):
-
-    conversations= (
-        db.query(Conversation)
-        .filter(
-            Conversation.user_id==current_user.id,
-            Conversation.document_id==document_id
-        )
-        .order_by(Conversation.created_at.desc())
-        .all()
-    )        
+    conversations = [
+    c for c in current_user.conversations 
+    if str(c.document_id) == document_id
+    ]    
     return [
         {
             "conversation_id":str(conv.id),
+            "title": conv.title,
             "created_at":conv.created_at
         }
         for conv in conversations
@@ -201,10 +148,8 @@ def upload_document(
         filename=file.filename,
         file_path=""
     )
-
-    db.add(document)
-    db.commit()
-    db.refresh(document)
+    document_repo = DocumentRepository(db)
+    document_repo.create(document)
     
     #create user folder
     user_folder=f"backend/pdf_storage_2/{current_user.id}"
@@ -250,15 +195,9 @@ def list_documents(
         db: Session=Depends(get_db),
         current_user: User= Depends(get_current_user)
             ):
-    documents=(
-        db.query(Document)
-        .filter(Document.user_id==current_user.id)
-        .order_by(Document.uploaded_at.desc())
-        .all()
-    )
-    for doc in documents:
-        print("*"*50)
-                    
+    document_repo = DocumentRepository(db)
+    documents=document_repo.get_user_documents(user_id = str(current_user.id))
+                        
     return [
         {
             "document_id":str(doc.id),
@@ -267,6 +206,19 @@ def list_documents(
         }
         for doc in documents
     ]
+
+========================================
+ FILE: health.py (Comments Removed)
+========================================
+
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/health")
+def health():
+    return {"status": "ok"}
+
 ========================================
  FILE: messages.py (Comments Removed)
 ========================================
@@ -276,10 +228,21 @@ router= APIRouter(prefix="/messages",tags=["messages"])
 @router.get("")
 def get_messages(
     conversation_id:str =Query(...),
-    db: Session=Depends(get_db)    
+    db: Session=Depends(get_db) ,
+    current_user: User = Depends(get_current_user)   
 ):
-    messages = get_conversation_messages(db,conversation_id )
-    print(Fore.YELLOW + f"\n\nmessages in the get_message are:{messages}\n\n" + Fore.RESET)
+    conversation_repo = ConversationRepository(db)
+    conversation = conversation_repo.get_by_id(conversation_id = conversation_id, user_id = str(current_user.id))
+    
+    #add the defensive validation here, because the conversation returned by get_by_id could be None
+    #and the pylance is indicating that if the return is None then the code will crash
+    
+    if conversation == None:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Conversation not found or access denied"
+        )
+    messages = conversation.messages
     return [
         {
             "role": m.role,
@@ -288,10 +251,10 @@ def get_messages(
         }
         for m in messages  # ← serialize properly
     ]
-
 ========================================
  FILE: users.py (Comments Removed)
 ========================================
+
 router = APIRouter(prefix="/users",tags=["users"])
 """prefix="/users" → clean REST API
 
@@ -312,11 +275,10 @@ def create_user(user_in:UserCreate,db: Session = Depends(get_db)):
 
 
     try:
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        # Add this right after db.refresh(user)
-        count = db.query(User).count()
+        user_repo = UserRepository(db)
+        
+        user_repo.create(user)
+        count = user_repo.count_users()
         print(f"Total users in DB: {count}")
     except IntegrityError:
         db.rollback()

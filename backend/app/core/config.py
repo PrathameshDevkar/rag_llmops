@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     
     # Auto-load configuration from .env file
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=os.getenv("ENV_FILE",".env"), #this will help the conftest to force the settings to use the ENV_FILE = .env.test instead of .env file
         env_file_encoding="utf-8",
         extra="ignore"
     )
