@@ -242,4 +242,6 @@ backend/tests/integration.txt
 backend/tests/rag.txt
 backend/tests/unit.txt
 
+test.ipynb
+
 
