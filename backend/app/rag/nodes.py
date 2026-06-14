@@ -6,6 +6,7 @@ from backend.app.services.embeddings import embed_text
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langsmith import traceable
 from typing import Iterator
 import os
 from colorama import Fore
@@ -18,6 +19,17 @@ from backend.app.core.logging import GLOBAL_LOGGER as log
 
 model = get_llm()
 
+@traceable(name = "Postgresql chunk retriever", run_type = "retriever")
+def _traced_chunks_retrieval(db, query_embedding, document_id):
+    return chunks_retrieval(db = db, query_embedding = query_embedding, document_id = document_id)
+
+@traceable(name = "PostgreSQL memory retrieval", run_type = "retriever")
+def _traced_memory_retrieval(db,query_embedding, user_id):
+    return memories_retrieval(db = db,query_embedding = query_embedding, user_id = user_id)
+
+
+
+
 def retrieval_node(state:RAGState) -> RAGState:
     db=SessionLocal()
     start_time = time.time()
@@ -25,7 +37,7 @@ def retrieval_node(state:RAGState) -> RAGState:
     log.info("vector_retrieval_started", user_id=state['user_id'], document_id=state['document_id'])
     try:
         query_embedding = embed_text(state['user_question'])
-        chunks_results=chunks_retrieval(
+        chunks_results=_traced_chunks_retrieval(
             db=db,
             query_embedding=query_embedding,
             document_id=state['document_id']
@@ -35,7 +47,7 @@ def retrieval_node(state:RAGState) -> RAGState:
       
         chunks=[r.content for r in chunks_results]
         
-        memory_results = memories_retrieval(
+        memory_results = _traced_memory_retrieval(
             db=db,
             query_embedding=query_embedding,
             user_id=state['user_id']

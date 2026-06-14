@@ -6,6 +6,7 @@ from backend.app.models.memories import Memories
 from backend.app.repositories.memories_repositories import MemoriesRepository
 from backend.app.services.model_loader import get_embedding_model
 from colorama import Fore
+from langsmith import traceable
 
 reflection_prompt_template="""
 You are analyzing conversations about research papers to create memories that will help guide future interactions. Your task is to extract key elements that would be most helpful when encountering similar academic discussions in the future.
@@ -62,7 +63,7 @@ What to avoid examples:
 
 Do not include any text outside the JSON object in your response.
 """
-
+@traceable(name = "Episodic memory synthesis engine", run_type = "chain")
 def add_episodic_memory(db:Session, user_id: str, conversation_id:str, chat_turn_text:str):
     """
     Analyzes a cht turn using litellm, extracts structure episodic metadata, 

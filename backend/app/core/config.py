@@ -2,6 +2,7 @@ import os
 from colorama import Fore
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 class Settings(BaseSettings):
     # Project Metadata
@@ -20,6 +21,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     HUGGINGFACE_API_KEY: str
+    
+    LANGSMITH_TRACING: bool = Field(default=False)
+    LANGSMITH_API_KEY: str | None = Field(default=None)
+    LANGSMITH_PROJECT: str = Field(default="rag_llmops_self")
+    LANGSMITH_ENDPOINT: str
     
     # Auto-load configuration from .env file
     model_config = SettingsConfigDict(
