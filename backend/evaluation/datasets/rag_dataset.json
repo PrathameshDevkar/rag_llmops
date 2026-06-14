@@ -1,0 +1,226 @@
+[
+  {
+    "eval_id": "eval_573c0d65-9513-4850-a0af-f6d4122573c1.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What happens to model quality when the attention key size d_k is reduced?",
+    "ground_truth_answer": "Model quality hurts when the attention key size d_k is reduced.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "attention_key_size_impact"
+    }
+  },
+  {
+    "eval_id": "eval_c3a8bf60-f361-42fc-b27e-80747f4f8df0.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "Is determining compatibility easy?",
+    "ground_truth_answer": "No, determining compatibility is not easy.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "compatibility_difficulty"
+    }
+  },
+  {
+    "eval_id": "eval_48c1c08d-1fc9-404a-9a42-43643b3c816a.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "Is a dot product a suitable compatibility function?",
+    "ground_truth_answer": "No, a more sophisticated compatibility function than dot product may be beneficial.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "compatibility_function_complexity"
+    }
+  },
+  {
+    "eval_id": "eval_988a4daa-10fe-4dad-b174-872964d58640.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What happens to model quality with bigger models?",
+    "ground_truth_answer": "Bigger models are better.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "model_size_impact"
+    }
+  },
+  {
+    "eval_id": "eval_35c38242-cda2-4106-a896-a217e529b4c6.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "Is dropout helpful in avoiding over-fitting?",
+    "ground_truth_answer": "Yes, dropout is very helpful in avoiding over-fitting.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "dropout_impact"
+    }
+  },
+  {
+    "eval_id": "eval_15a110df-7344-4385-b6c2-7ff2f326c025.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What happens to results when replacing sinusoidal positional encoding with learned positional embeddings?",
+    "ground_truth_answer": "Results are nearly identical to the base model.",
+    "expected_context_snippets": [
+      "In Table 3 rows (B), we observe that reducing the attention key size d k hurts model quality. This suggests that determining compatibility is not easy and that a more sophisticated compatibility function than dot product may be beneficial. We further observe in rows (C) and (D) that, as expected, bigger models are better, and dropout is very helpful in avoiding over-fitting. In row (E) we replace our sinusoidal positional encoding with learned positional embeddings [9], and observe nearly identical results to the base model."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "positional_embedding_replacement"
+    }
+  },
+  {
+    "eval_id": "eval_b78e8cb4-7f5a-4e9b-a964-9aba9596dc24.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What is the number of identical layers in the encoder?",
+    "ground_truth_answer": "6",
+    "expected_context_snippets": [
+      "Encoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, positionwise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm( x +Sublayer( x )) , where Sublayer( x ) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension d model = 512 ."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "encoder layer count"
+    }
+  },
+  {
+    "eval_id": "eval_b8a2a47a-8694-400d-ba2b-d0b9a879d7b8.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What type of mechanism is used in the first sub-layer of each layer in the encoder?",
+    "ground_truth_answer": "multi-head self-attention",
+    "expected_context_snippets": [
+      "Encoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, positionwise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm( x +Sublayer( x )) , where Sublayer( x ) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension d model = 512 ."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "encoder sub-layer mechanism"
+    }
+  },
+  {
+    "eval_id": "eval_02a20735-e442-4994-80ac-2e6656a2c8df.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What is the name and purpose of the function used in residual connections in the encoder?",
+    "ground_truth_answer": "LayerNorm",
+    "expected_context_snippets": [
+      "Encoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, positionwise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm( x +Sublayer( x )) , where Sublayer( x ) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension d model = 512 ."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "encoder residual connection function"
+    }
+  },
+  {
+    "eval_id": "eval_a22c78ba-b480-415b-bf91-d98fadc9a2b1.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What is the dimension of the outputs produced by all sub-layers and embedding layers in the encoder?",
+    "ground_truth_answer": "512",
+    "expected_context_snippets": [
+      "Encoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, positionwise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm( x +Sublayer( x )) , where Sublayer( x ) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension d model = 512 ."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "encoder output dimension"
+    }
+  },
+  {
+    "eval_id": "eval_950ca82a-ff27-414f-803d-4cde47f8aa42.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What layers were replaced in encoder-decoder architectures by the Transformer model?",
+    "ground_truth_answer": "Recurrent layers",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "attention_architecture"
+    }
+  },
+  {
+    "eval_id": "eval_be052e66-e643-45bb-8734-8c69bbfe44b4.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "Can the Transformer model be trained faster than other architectures?",
+    "ground_truth_answer": "Yes, the Transformer model can be trained significantly faster than architectures based on recurrent or convolutional layers.",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "training_speed"
+    }
+  },
+  {
+    "eval_id": "eval_1ba54f1f-cc74-4946-9313-964358313996.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What translation tasks did the Transformer achieve a new state of the art on?",
+    "ground_truth_answer": "WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "translation_tasks"
+    }
+  },
+  {
+    "eval_id": "eval_1b02864a-9017-4b38-bb4e-7694ac05efdc.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What is a future goal of applying attention-based models to other tasks?",
+    "ground_truth_answer": "To extend the Transformer to problems involving input and output modalities other than text",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "research_goals"
+    }
+  },
+  {
+    "eval_id": "eval_aa238610-b2e4-4c60-917f-ecad4313e825.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "What type of attention mechanisms are the authors planning to investigate?",
+    "ground_truth_answer": "Local, restricted attention mechanisms",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "attention_mechanisms"
+    }
+  },
+  {
+    "eval_id": "eval_f14b9cdc-3faf-4118-95f2-06913bffe67b.hex[:8]",
+    "user_id": "10f4be08-a00a-4006-9fed-ff3d803a3add",
+    "document_id": "a3ccceda-915d-4220-85c9-babe86dd269c",
+    "input_question": "Where is the code used to train and evaluate the Transformer models available?",
+    "ground_truth_answer": "At https://github.com/tensorflow/tensor2tensor",
+    "expected_context_snippets": [
+      "In this work, we presented the Transformer, the first sequence transduction model based entirely on attention, replacing the recurrent layers most commonly used in encoder-decoder architectures with multi-headed self-attention.\nFor translation tasks, the Transformer can be trained significantly faster than architectures based on recurrent or convolutional layers. On both WMT 2014 English-to-German and WMT 2014 English-to-French translation tasks, we achieve a new state of the art. In the former task our best model outperforms even all previously reported ensembles.\nWe are excited about the future of attention-based models and plan to apply them to other tasks. We plan to extend the Transformer to problems involving input and output modalities other than text and to investigate local, restricted attention mechanisms to efficiently handle large inputs and outputs such as images, audio and video. Making generation less sequential is another research goals of ours.\nThe code we used to train and evaluate our models is available at https://github.com/ tensorflow/tensor2tensor .\nAcknowledgements We are grateful to Nal Kalchbrenner and Stephan Gouws for their fruitful comments, corrections and inspiration."
+    ],
+    "expected_memory_profile": {
+      "has_relevant_past_interaction": true,
+      "context_tags": "code_availability"
+    }
+  }
+]

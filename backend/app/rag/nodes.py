@@ -84,6 +84,9 @@ def generate_node(state:RAGState) -> Iterator[RAGState]:
     #enforece sliding context window of the last 5 chat turns
     history_window = state["chat_history"][-5:] if state["chat_history"] else []
     
+    print(Fore.CYAN + f"\n\n==========chat history is:{history_window}\n\n")
+    print(Fore.CYAN + f"\n\n==========episodic memory is:{compiled_memories_context}\n\n")
+
     prompt=PromptTemplate(
         template="""
         you are a helpful assistant who gives answer to the given question based on the given context. 

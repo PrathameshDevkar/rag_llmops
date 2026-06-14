@@ -104,7 +104,6 @@ def add_episodic_memory(db:Session, user_id: str, conversation_id:str, chat_turn
             "what_worked":result.get("what_worked","N/A"),
             "what_to_avoid":result.get("what_to_avoid","N/A")
         })
-        print(Fore.CYAN + f"conversation memory while testing is:{conv_summary_emb}" + Fore.RESET)
         db_memory = Memories(
             user_id = user_id,
             conversation_id = conversation_id,
