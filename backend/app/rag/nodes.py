@@ -37,6 +37,9 @@ def retrieval_node(state:RAGState) -> RAGState:
     log.info("vector_retrieval_started", user_id=state['user_id'], document_id=state['document_id'])
     try:
         query_embedding = embed_text(state['user_question'])
+        
+        print(Fore.CYAN + "\n\ninitiating the tracing of chunk retrieval\n\n" + Fore.RESET)
+
         chunks_results=_traced_chunks_retrieval(
             db=db,
             query_embedding=query_embedding,
@@ -96,8 +99,8 @@ def generate_node(state:RAGState) -> Iterator[RAGState]:
     #enforece sliding context window of the last 5 chat turns
     history_window = state["chat_history"][-5:] if state["chat_history"] else []
     
-    print(Fore.CYAN + f"\n\n==========chat history is:{history_window}\n\n")
-    print(Fore.CYAN + f"\n\n==========episodic memory is:{compiled_memories_context}\n\n")
+    # print(Fore.CYAN + f"\n\n==========chat history is:{history_window}\n\n")
+    # print(Fore.CYAN + f"\n\n==========episodic memory is:{compiled_memories_context}\n\n")
 
     prompt=PromptTemplate(
         template="""

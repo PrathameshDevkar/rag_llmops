@@ -16,6 +16,7 @@ from backend.app.models.memories import Memories
 from backend.app.services.model_loader import get_llm
 from backend.app.core.database import SessionLocal
 
+
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from colorama import Fore

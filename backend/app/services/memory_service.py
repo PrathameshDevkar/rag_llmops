@@ -7,7 +7,7 @@ from backend.app.repositories.memories_repositories import MemoriesRepository
 from backend.app.services.model_loader import get_embedding_model
 from colorama import Fore
 from langsmith import traceable
-
+from backend.app.core.logging import GLOBAL_LOGGER as log
 reflection_prompt_template="""
 You are analyzing conversations about research papers to create memories that will help guide future interactions. Your task is to extract key elements that would be most helpful when encountering similar academic discussions in the future.
 
@@ -115,10 +115,10 @@ def add_episodic_memory(db:Session, user_id: str, conversation_id:str, chat_turn
         
         memories_repo = MemoriesRepository(db)
         memories_repo.create(db_memory)
-        print(Fore.YELLOW + "episodic memory added succesfully" + Fore.RESET)
+        log.info(Fore.YELLOW + "episodic memory added succesfully" + Fore.RESET)
         
     except Exception as e:
         db.rollback()
-        print(Fore.RED + f"error during adding the episodic memory in dataabse:\n{e}" + Fore.RESET)
+        log.error(Fore.RED + f"error during adding the episodic memory in dataabse:\n{e}" + Fore.RESET, error = str(e))
         
     
