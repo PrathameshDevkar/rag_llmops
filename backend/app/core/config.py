@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     HUGGINGFACE_API_KEY: str
+    GEMINI_API_KEY: str
     
     LANGSMITH_TRACING: bool = Field(default=False)
     LANGSMITH_API_KEY: str | None = Field(default=None)

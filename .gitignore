@@ -243,5 +243,7 @@ backend/tests/rag.txt
 backend/tests/unit.txt
 
 test.ipynb
-
+test.py
+.deepeval/
+vertexai-free-credits-api-key.json
 

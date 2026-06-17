@@ -1,6 +1,7 @@
 from functools import lru_cache
 from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace, HuggingFaceEmbeddings
 from backend.app.core.config import settings
+from google import genai
 
 @lru_cache
 def get_llm():
@@ -11,6 +12,7 @@ def get_llm():
     )
 
     return ChatHuggingFace(llm=llm)
+    # client = genai.Client(api_key = settings.GEMINI_API_KEY)
 
 
 @lru_cache
