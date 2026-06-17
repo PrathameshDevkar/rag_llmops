@@ -137,7 +137,7 @@ def run_deepeval_harness():
                 retrieved_chunks = final_graph_state.get("retrieved_chunks",[])
             
             except Exception as e:
-                log.error("deep evaluation graph execution failed", error= str(e))
+                log.error("llm generation during the test case in custom metrics evaluation failed",eval_id = sample["eval_id"], error = str(e))
                 continue
             
             if not retrieved_chunks:

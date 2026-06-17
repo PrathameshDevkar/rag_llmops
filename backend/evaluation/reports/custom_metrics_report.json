@@ -1,0 +1,42 @@
+{
+  "execution_timestamp": "2026-06-17T10:32:03.244127",
+  "summary": {
+    "memory_recall_rate": 1.0,
+    "memory_utilization_rate": 0.25,
+    "runs": [
+      {
+        "qusetion": "What is the primary limitation of recurrent models in sequence modeling?",
+        "e2e_latency_ms": 5862,
+        "memories_recall_count": 4,
+        "memories_utilized_flags": [
+          true,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "qusetion": "How do attention mechanisms enable modeling of dependencies in sequence modeling?",
+        "e2e_latency_ms": 5589,
+        "memories_recall_count": 4,
+        "memories_utilized_flags": [
+          false,
+          false,
+          false,
+          true
+        ]
+      },
+      {
+        "qusetion": "What is the fundamental change proposed by the Transformer model?",
+        "e2e_latency_ms": 5579,
+        "memories_recall_count": 4,
+        "memories_utilized_flags": [
+          false,
+          false,
+          true,
+          false
+        ]
+      }
+    ]
+  }
+}

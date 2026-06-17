@@ -247,3 +247,6 @@ test.py
 .deepeval/
 vertexai-free-credits-api-key.json
 
+backend/evaluation/datasets.txt
+backend/evaluation/evaluators.txt
+backend/evaluation/generate.py
