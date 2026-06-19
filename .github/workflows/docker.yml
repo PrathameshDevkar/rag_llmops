@@ -1,10 +1,9 @@
 name: Docker Build
 
 on: 
-  workflow_run:
-    workflows: ["Evaluation"]
-    types:
-      - completed
+  pull_request:
+    branches:
+      - main
 
 jobs:
 
