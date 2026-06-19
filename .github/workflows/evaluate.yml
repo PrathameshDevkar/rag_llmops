@@ -13,13 +13,28 @@ on:
   push:
     branches:
       - test-eval-docker
-      
+
 
 jobs:
   evaluate:
     # if: ${{github.event.workflow_run.conclusion == 'success'}}
     runs-on: ubuntu-latest
 
+    env:
+      #PYTHONPATH: ${{ github.workspace }}: This replaces the ambiguous dot (.) with an explicit, rock-solid absolute path string (e.g., /home/runner/work/rag_llmops/rag_llmops) 
+      #so Python knows exactly where the root directory sits.
+      PYTHONPATH: ${{github.workspace}}
+      DB_HOST: ${{secrets.DB_HOST}}
+      DB_PORT: ${{secrets.DB_PORT}}
+      DB_NAME: ${{secrets.DB_NAME}}
+      DB_USER: ${{secrets.DB_USER}}
+      LANGCHAIN_TRACING_V2: "true"
+      LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
+      LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
+      LANGSMITH_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
+      LANGSMITH_ENDPOINT: ${{secrets.LANGSMITH_ENDPOINT}}
+      HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
+      GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
     steps:
 
       - uses: actions/checkout@v4
@@ -46,34 +61,14 @@ jobs:
           echo '${{secrets.GCP_SA_KEY}}' > ${{github.workspace}}/gcp-credentials.json
 
       - name: Run RAGAS Evaluation
-        env:
-          #PYTHONPATH: ${{ github.workspace }}: This replaces the ambiguous dot (.) with an explicit, rock-solid absolute path string (e.g., /home/runner/work/rag_llmops/rag_llmops) 
-          #so Python knows exactly where the root directory sits.
-          PYTHONPATH: ${{github.workspace}}
-          LANGCHAIN_TRACING_V2: "true"
-          LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
-          LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
-          HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
         run: |
           python -m backend.evaluation.evaluators.ragas_eval  
 
       - name: Run DeepEval Evaluation
-        env:
-          PYTHONPATH: ${{github.workspace}}
-          LANGCHAIN_TRACING_V2: "true"
-          LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
-          LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
         run: |
           python -m backend.evaluation.evaluators.deepeval_eval 
 
       - name: Custom metrics evaluation
-        env:
-          PYTHONPATH: ${{github.workspace}}
-          LANGCHAIN_TRACING_V2: "true"
-          LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
-          LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
-          GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
         run: |
           python -m backend.evaluation.evaluators.custom_eval
         

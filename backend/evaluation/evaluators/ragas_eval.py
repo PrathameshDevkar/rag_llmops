@@ -9,6 +9,7 @@ import nest_asyncio
 
 
 
+#changes to resolve the error of module import error langchain_community.chat_models.vertexai'==============================
 # ==============================================================================================================================
 # 🧩 UPSTREAM RAGAS COLD-START HOTFIX: Bypasses known issue where ragas unconditionally imports a deleted langchain path
 # ==============================================================================================================================
