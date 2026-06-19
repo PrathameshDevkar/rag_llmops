@@ -75,7 +75,7 @@ def run_custom_evaluation():
     with open(DATASET_FILE, "r", encoding = "utf-8") as f:
         eval_cases = json.load(f)
 
-    run_samples = eval_cases[:3]
+    run_samples = eval_cases[:1]
     judge_model = GenerativeModel("gemini-2.5-flash")
 
     detailed_metrics_log = []
