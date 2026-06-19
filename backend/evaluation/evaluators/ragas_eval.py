@@ -7,13 +7,42 @@ import time
 from datetime import datetime
 import nest_asyncio
 
+
+
+# ==============================================================================================================================
+# 🧩 UPSTREAM RAGAS COLD-START HOTFIX: Bypasses known issue where ragas unconditionally imports a deleted langchain path
+# ==============================================================================================================================
+try:
+    from langchain_google_vertexai import ChatVertexAI
+except ImportError:
+    class ChatVertexAI:
+        pass
+import sys
+import types
+# Register a virtual spoofed module mapping to satisfy the ragas top-level import firewall
+if "langchain_community.chat_models.vertexai" not in sys.modules:
+    mock_vertex_module = types.ModuleType("vertexai")
+    mock_vertex_module.ChatVertexAI = ChatVertexAI
+    sys.modules["langchain_community.chat_models.vertexai"] = mock_vertex_module
+# ==============================================================================================================================
+
+
 from ragas import evaluate
+
+#to use the collections ,the metrucs need the llm as their argument. that llm must be objet of llm_factory . llmfactory takes llm provider clients
+# from ragas.metrics.collections import (
+#     ContextPrecision,
+#     ContextRecall,
+#     Faithfulness,
+#     AnswerRelevancy
+# )
 from ragas.metrics import (
     ContextPrecision,
     ContextRecall,
     Faithfulness,
     AnswerRelevancy
 )
+from ragas.llms import llm_factory
 
 
 from backend.app.rag.graph import build_graph
@@ -133,6 +162,7 @@ def execute_evaluation_run():
     ragas_dataset = Dataset.from_pandas(df)
     
     local_llm = get_llm()
+    # llm= llm_factory(local_llm)
     local_embedding_model = get_embedding_model()
     
     # metrics = [ContextPrecision(),
@@ -143,8 +173,8 @@ def execute_evaluation_run():
     
     scores = evaluate(
         dataset = ragas_dataset,
+        llm = local_llm,
         metrics = metrics,
-        llm= local_llm,
         embeddings = local_embedding_model,
         allow_nest_asyncio = True
     )
