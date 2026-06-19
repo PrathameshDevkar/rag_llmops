@@ -1,15 +1,16 @@
 name: CI
 
 on:
-  push:
-    branches:
-      # - main
-      - test-ci
-      - test-eval-docker
+  # push:
+  #   branches:
+  #     # - main
+  #     - test-ci
+  #     - test-eval-docker
 
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 
 jobs:

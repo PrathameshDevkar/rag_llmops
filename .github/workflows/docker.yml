@@ -6,10 +6,10 @@ name: Docker Build
 #     types:
 #       - completed
 on:
-  pull_request:
-    branches:
-      main
-
+  # pull_request:
+  #   branches:
+  #     main
+  workflow_dispatch:
 jobs:
 
   docker:

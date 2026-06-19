@@ -9,9 +9,11 @@ name: Evaluation
 #   pull_request:
 #     branches:
 #       - main
-
-on: 
-  workflow_dispatch: # 🚀 This unlocks manual isolated runs in the UI!
+on:
+  push:
+    branches:
+      - test-eval-docker
+      
 
 jobs:
   evaluate:
