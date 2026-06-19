@@ -1,0 +1,40 @@
+name: Docker Build
+
+on: 
+  workflow_run:
+    workflows: ["Evaluation"]
+    types:
+      - completed
+
+jobs:
+
+  docker:
+
+    if: ${{github.event.workflow_run.conclusion == 'success'}}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: actions/login-action@v3
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+
+      - name: Build Backend Image
+        run: |
+          docker build -t prathameshdevkarch/rag-backend:latest ./backend
+      
+      - name: Build Frontend Image
+        run: |
+          docker build -t prathameshdevkarch/rag-frontend:latest ./frontend
+
+      - name: Push Backend Image
+        run: |
+          docker push prathameshdevkarch/rag-backend:latest
+      
+      - name: Push Frontend Image
+        run: |
+          docker push prathameshdevkarch/rag-frontend:latest
+
