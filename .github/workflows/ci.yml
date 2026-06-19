@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    brancehs:
+    branches:
       # - main
       - test-ci
+      - test-eval-docker
 
   pull_request:
     branches:

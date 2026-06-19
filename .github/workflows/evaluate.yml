@@ -11,9 +11,6 @@ jobs:
     if: ${{github.event.workflow_run.conclusion == 'success'}}
     runs-on: ubuntu-latest
 
-    #Sets the ksaerch path globally fo the steps in this job
-    env:
-      PYTHONPATH: .
     steps:
 
       - uses: actions/checkout@v4
@@ -41,30 +38,35 @@ jobs:
 
       - name: Run RAGAS Evaluation
         env:
+          #PYTHONPATH: ${{ github.workspace }}: This replaces the ambiguous dot (.) with an explicit, rock-solid absolute path string (e.g., /home/runner/work/rag_llmops/rag_llmops) 
+          #so Python knows exactly where the root directory sits.
+          PYTHONPATH: ${{github.workspace}}
           LANGCHAIN_TRACING_V2: "true"
           LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
           LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
           HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
         run: |
-          python backend/evaluation/evaluators/ragas_eval.py  
+          python -m backend.evaluation.evaluators.ragas_eval  
 
       - name: Run DeepEval Evaluation
         env:
+          PYTHONPATH: ${{github.workspace}}
           LANGCHAIN_TRACING_V2: "true"
           LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
           LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
           GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
         run: |
-          python backend/evaluation/evaluators/deepeval_eval.py 
+          python -m backend.evaluation.evaluators.deepeval_eval 
 
       - name: Custom metrics evaluation
         env:
+          PYTHONPATH: ${{github.workspace}}
           LANGCHAIN_TRACING_V2: "true"
           LANGCHAIN_API_KEY: ${{secrets.LANGSMITH_API_KEY}}
           LANGSMITH_PROJECT: ${{secrets.LANGSMITH_PROJECT}}
           GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
         run: |
-          python backend/evaluation/evaluators/custom_eval.py
+          python -m backend.evaluation.evaluators.custom_eval
         
 
       - name: Upload Evaluation reports
