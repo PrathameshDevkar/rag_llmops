@@ -5,10 +5,13 @@ name: Evaluation
 #     workflows: ["CI"]
 #     types:
 #       - completed
+# on: 
+#   pull_request:
+#     branches:
+#       - main
+
 on: 
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch: # 🚀 This unlocks manual isolated runs in the UI!
 
 jobs:
   evaluate:
