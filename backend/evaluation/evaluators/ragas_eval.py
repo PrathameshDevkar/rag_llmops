@@ -60,7 +60,7 @@ def execute_evaluation_run():
     with open(DATASET_FILE, "r", encoding="utf-8") as f:
         eval_cases = json.load(f)
     
-    run_samples = eval_cases[:3]
+    run_samples = eval_cases[:1]
     
     compiled_evaluation_data = []
     
@@ -135,10 +135,11 @@ def execute_evaluation_run():
     local_llm = get_llm()
     local_embedding_model = get_embedding_model()
     
-    metrics = [ContextPrecision(),
-    ContextRecall(),
-    Faithfulness(),
-    AnswerRelevancy()]
+    # metrics = [ContextPrecision(),
+    # ContextRecall(),
+    # Faithfulness(),
+    # AnswerRelevancy()]
+    metrics = [ContextPrecision()]
     
     scores = evaluate(
         dataset = ragas_dataset,

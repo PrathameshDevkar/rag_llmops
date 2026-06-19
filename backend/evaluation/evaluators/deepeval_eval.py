@@ -44,7 +44,8 @@ REPORT_DIR = Path(CURRENT_DIR,"reports")
 REPORT_FILE = Path(REPORT_DIR, "deepeval_report.json")
 
 # client = genai.Client(api_key = settings.GEMINI_API_KEY)
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\vertexai-free-credits-api-key.json"
+if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"C:\Users\Prathamesh\prathamesh\llmops_rag_langgraph\vertexai-free-credits-api-key.json"
 vertexai.init(project = "poised-cortex-462609-n4", location = "us-central1")
 
 
@@ -98,7 +99,7 @@ def run_deepeval_harness():
     with open(DATASET_FILE, "r", encoding = "utf-8") as f:
         eval_cases = json.load(f)
 
-    run_samples = eval_cases[:3]
+    run_samples = eval_cases[:1]
 
     test_cases_pool = []
     hallucination_test_cases_pool = []
@@ -137,7 +138,7 @@ def run_deepeval_harness():
                 retrieved_chunks = final_graph_state.get("retrieved_chunks",[])
             
             except Exception as e:
-                log.error("deep evaluation graph execution failed", error= str(e))
+                log.error("llm generation during the test case in custom metrics evaluation failed",eval_id = sample["eval_id"], error = str(e))
                 continue
             
             if not retrieved_chunks:

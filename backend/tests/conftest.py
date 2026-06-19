@@ -18,6 +18,16 @@ from backend.app.models.user import User
 from backend.app.core.security import hash_password
 from backend.app.core.auth import create_access_token
 
+"""
+When you run coverage run -m pytest, Pytest initiates its Test Collection Phase 
+to discover all your test files before executing them.
+"""
+
+"""also check the config.py file to understand why we override the os environment file
+which is required during the pytest execution
+"""
+
+
 # Connect directly to your dedicated Postgres test database string
 print(f"===================================={settings.SECRET_KEY}&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 TEST_DATABASE_URL = (

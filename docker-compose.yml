@@ -8,11 +8,17 @@ services:
     environment:
       POSTGRES_USER: langgraph_user_2
       POSTGRES_PASSWORD: langchain123
-      POSTGRES_DB: rag_langgraph_2
+      POSTGRES_DB: llmops_rag_2
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langgraph_user_2"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
   
   backend:
     build: ./backend
@@ -20,9 +26,17 @@ services:
     env_file:
       - ./backend/.env
     ports:
-      - "8001:8001"
+      - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
@@ -32,7 +46,8 @@ services:
     depends_on:
       - backend
     environment:
-      - API_BASE=http://backend:8001
+      - API_BASE=http://backend:8000
+    restart: unless-stopped
   
 volumes:
   pgdata:
