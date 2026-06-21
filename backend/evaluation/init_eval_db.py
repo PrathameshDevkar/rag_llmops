@@ -49,7 +49,11 @@ def seed_database():
             db.merge(db_user)
 
             #Insert document record entry
-            db_doc = Document(id = doc_id, user_id = user_id, filename=f"fixture_{doc_id[:8]}")
+            db_doc = Document(id = doc_id, 
+            user_id = user_id, 
+            filename=f"fixture_{doc_id[:8]}",
+            file_path=f"/fixtures/mock_storage/eval_{doc_id[:8]}.pdf"
+            )
             db.merge(db_doc)
 
             for chunk in doc_data["chunks"]:
