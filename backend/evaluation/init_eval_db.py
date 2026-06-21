@@ -72,6 +72,8 @@ def seed_database():
 
         #Phase 2: adding the fixtures episodic memories in the memories table
         log.info(f"processing the {len(memories_list)} episodic memories...")
+        
+        seeded_conversation_ids = set()
         for mem_data in memories_list:
             m_user_id = mem_data["user_id"]
             m_conv_id = mem_data["conversation_id"]
@@ -80,23 +82,25 @@ def seed_database():
             db_user = User(id = m_user_id, username = f"tenant_{m_user_id[:8]}", password_hash = "test-password-hash")
             db.merge(db_user)
 
-            tenant_documents = user_doc_map.get(m_user_id)
+            if m_conv_id not in seeded_conversation_ids:
+                tenant_documents = user_doc_map.get(m_user_id)
 
-            if tenant_documents:
-                fallback_doc_id = tenant_documents[0]
-            else:
-                fallback_doc_id = documents_list[0]["document_id"] if documents_list else None  
+                if tenant_documents:
+                    fallback_doc_id = tenant_documents[0]
+                else:
+                    fallback_doc_id = documents_list[0]["document_id"] if documents_list else None  
 
-            if fallback_doc_id:
-                db_conv = Conversation(
-                    id = m_conv_id,
-                    user_id = m_user_id,
-                    document_id = fallback_doc_id,
-                    title = "CI sedding conversation-memories anchor"
-                )
-                db.merge(db_conv)
-            else:
-                log.warning("Skipped conversation seeding", conversation_id = m_conv_id, reason="No strucutual document available")
+                if fallback_doc_id:
+                    db_conv = Conversation(
+                        id = m_conv_id,
+                        user_id = m_user_id,
+                        document_id = fallback_doc_id,
+                        title = "CI sedding conversation-memories anchor"
+                    )
+                    db.merge(db_conv)
+                    seeded_conversation_ids.add(m_conv_id)
+                else:
+                    log.warning("Skipped conversation seeding", conversation_id = m_conv_id, reason="No strucutual document available")
 
             db_memory = Memories(
                 id = mem_data["memory_id"],
