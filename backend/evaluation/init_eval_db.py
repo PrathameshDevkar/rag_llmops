@@ -80,7 +80,7 @@ def seed_database():
             m_conv_id = uuid.UUID(mem_data["conversation_id"])
             m_memory_id = uuid.UUID(mem_data["memory_id"])
             #Dynamic Seeding: ensure parents reference exis for memory referance
-            db_user = User(id = m_user_id, username = f"tenant_{set(m_user_id)[:8]}", password_hash = "test-password-hash")
+            db_user = User(id = m_user_id, username = f"tenant_{str(m_user_id)[:8]}", password_hash = "test-password-hash")
             db.merge(db_user)
 
             if str(m_conv_id) not in seeded_conversation_ids:
