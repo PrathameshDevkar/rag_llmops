@@ -8,6 +8,7 @@ from collections import defaultdict
 from backend.app.core.database import engine, SessionLocal, Base
 from backend.app.models.base import Document, User, Chunk, Conversation, Memories
 from backend.app.core.logging import GLOBAL_LOGGER as log
+import uuid
 
 CURRENT_DIR = Path(__file__).resolve().parents[0]
 FIXTURES_PATH = Path(CURRENT_DIR,"datasets", "eval_fixtures.json")
@@ -39,8 +40,8 @@ def seed_database():
         log.info("seeding_phase_1_started", doc_count=len(documents_list))
 
         for doc_data in documents_list:
-            user_id = doc_data["user_id"]
-            doc_id = doc_data["document_id"]
+            user_id = uuid.UUID(doc_data["user_id"])
+            doc_id = uuid.UUID(doc_data["document_id"])
 
             #Retaining a running record map of which documents belongs to which users
             user_doc_map[user_id].append(doc_id)
@@ -75,9 +76,9 @@ def seed_database():
         
         seeded_conversation_ids = set()
         for mem_data in memories_list:
-            m_user_id = mem_data["user_id"]
-            m_conv_id = mem_data["conversation_id"]
-
+            m_user_id = uuid.UUID(mem_data["user_id"])
+            m_conv_id = uuid.UUID(mem_data["conversation_id"])
+            m_memory_id = uuid.UUID(mem_data["memory_id"])
             #Dynamic Seeding: ensure parents reference exis for memory referance
             db_user = User(id = m_user_id, username = f"tenant_{m_user_id[:8]}", password_hash = "test-password-hash")
             db.merge(db_user)
@@ -103,7 +104,7 @@ def seed_database():
                     log.warning("Skipped conversation seeding", conversation_id = m_conv_id, reason="No strucutual document available")
 
             db_memory = Memories(
-                id = mem_data["memory_id"],
+                id = m_memory_id,
                 user_id = m_user_id,
                 conversation_id = m_conv_id,
                 memory_type = mem_data["memory_type"],
