@@ -28,7 +28,7 @@ jobs:
           POSTGRES_USER: ${{secrets.DB_USER}}
           POSTGRES_PASSWORD: ${{secrets.DB_PASSWORD}}
           POSTGRES_DB: ${{secrets.DB_NAME}}
-        port:
+        ports:
           5432:5432
         options: >-
           --health-cmd "pg_isready -U langgraph_user_2 -d llmops_rag_2"
