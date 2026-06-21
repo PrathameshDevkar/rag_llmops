@@ -185,9 +185,9 @@ def execute_evaluation_run():
         log.info(Fore.GREEN + "evaluation is successfull" + Fore.RESET)
         print(f"\nscore is:{scores}\n")
         print(f"\ncontext_precision is:{scores['context_precision']}\n")
-        print(f"\ncontext_recall is:{scores['context_recall']}\n")
-        print(f"\nfaithfulness is:{scores['faithfulness']}\n")
-        print(f"\nanswer_relevancy is:{scores['answer_relevancy']}\n")
+        # print(f"\ncontext_recall is:{scores['context_recall']}\n")
+        # print(f"\nfaithfulness is:{scores['faithfulness']}\n")
+        # print(f"\nanswer_relevancy is:{scores['answer_relevancy']}\n")
 
     # 7. Write structured json analytics out to file disk
     os.makedirs(REPORT_DIR, exist_ok=True)
