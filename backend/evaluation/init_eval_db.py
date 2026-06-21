@@ -44,16 +44,16 @@ def seed_database():
             doc_id = uuid.UUID(doc_data["document_id"])
 
             #Retaining a running record map of which documents belongs to which users
-            user_doc_map[user_id].append(doc_id)
+            user_doc_map[str(user_id)].append(str(doc_id))
             #Generate user anchor row to satisfy relational constriants
-            db_user = User(id=user_id, username = f"tenant_{user_id[:8]}", password_hash="test-password-hash")
+            db_user = User(id=user_id, username = f"tenant_{str(user_id)[:8]}", password_hash="test-password-hash")
             db.merge(db_user)
 
             #Insert document record entry
             db_doc = Document(id = doc_id, 
             user_id = user_id, 
-            filename=f"fixture_{doc_id[:8]}",
-            file_path=f"/fixtures/mock_storage/eval_{doc_id[:8]}.pdf"
+            filename=f"fixture_{str(doc_id)[:8]}",
+            file_path=f"/fixtures/mock_storage/eval_{str(doc_id)[:8]}.pdf"
             )
             db.merge(db_doc)
 
@@ -80,11 +80,11 @@ def seed_database():
             m_conv_id = uuid.UUID(mem_data["conversation_id"])
             m_memory_id = uuid.UUID(mem_data["memory_id"])
             #Dynamic Seeding: ensure parents reference exis for memory referance
-            db_user = User(id = m_user_id, username = f"tenant_{m_user_id[:8]}", password_hash = "test-password-hash")
+            db_user = User(id = m_user_id, username = f"tenant_{set(m_user_id)[:8]}", password_hash = "test-password-hash")
             db.merge(db_user)
 
-            if m_conv_id not in seeded_conversation_ids:
-                tenant_documents = user_doc_map.get(m_user_id)
+            if str(m_conv_id) not in seeded_conversation_ids:
+                tenant_documents = user_doc_map.get(str(m_user_id))
 
                 if tenant_documents:
                     fallback_doc_id = tenant_documents[0]
@@ -99,7 +99,7 @@ def seed_database():
                         title = "CI sedding conversation-memories anchor"
                     )
                     db.merge(db_conv)
-                    seeded_conversation_ids.add(m_conv_id)
+                    seeded_conversation_ids.add(str(m_conv_id))
                 else:
                     log.warning("Skipped conversation seeding", conversation_id = m_conv_id, reason="No strucutual document available")
 
