@@ -20,12 +20,29 @@ jobs:
     # if: ${{github.event.workflow_run.conclusion == 'success'}}
     runs-on: ubuntu-latest
 
+    #spin up a postges service with the pgvector installed
+    services:
+      postgres:
+        image:  pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ${{secrets.DB_USER}}
+          POSTGRES_PASSWORD: ${{secrets.DB_PASSWORD}}
+          POSTGRES_DB: ${{secrets.DB_NAME}}
+        port:
+          5432:5432
+        options: >-
+          --health-cmd "pg_isready -U langgraph_user_2 -d llmops_rag_2"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    
     env:
       #PYTHONPATH: ${{ github.workspace }}: This replaces the ambiguous dot (.) with an explicit, rock-solid absolute path string (e.g., /home/runner/work/rag_llmops/rag_llmops) 
       #so Python knows exactly where the root directory sits.
       PYTHONPATH: ${{github.workspace}}
-      DB_HOST: ${{secrets.DB_HOST}}
-      DB_PORT: ${{secrets.DB_PORT}}
+      DB_HOST: localhost
+      DB_PORT: 5432
       DB_NAME: ${{secrets.DB_NAME}}
       DB_USER: ${{secrets.DB_USER}}
       DB_PASSWORD: ${{secrets.DB_PASSWORD}}
@@ -36,6 +53,9 @@ jobs:
       LANGSMITH_ENDPOINT: ${{secrets.LANGSMITH_ENDPOINT}}
       HUGGINGFACE_API_KEY: ${{secrets.HUGGINGFACE_API_KEY}}
       GOOGLE_APPLICATION_CREDENTIALS: ${{github.workspace}}/gcp-credentials.json
+      DATABASE_URL: postgresql+psycopg://${{secrets.DB_USER}}:${{secrets.DB_PASSWORD}}@localhost:5432/${{secrets.DB_NAME}}
+      psycopg_URL: postgresql://${{secrets.DB_USER}}:${{secrets.DB_PASSWORD}}@localhost:5432/${{secrets.DB_NAME}}
+
     steps:
 
       - uses: actions/checkout@v4
@@ -61,6 +81,10 @@ jobs:
         run: |
           echo '${{secrets.GCP_SA_KEY}}' > ${{github.workspace}}/gcp-credentials.json
 
+      # 🏁 Step A: Initialize the schema and populate text chunks + episodic memories + vectors into the service container
+      - name: Initialize and Seed Evaluation Database
+        run: |
+          python -m backend.evaluation.init_eval_db
       - name: Run RAGAS Evaluation
         run: |
           python -m backend.evaluation.evaluators.ragas_eval  

@@ -136,6 +136,7 @@ def execute_evaluation_run():
                         
                 final_graph_state = graph.get_state(config).values
                 retrieved_chunks = final_graph_state.get("retrieved_chunks",[])
+                print(Fore.YELLOW + f"\n\n====retrieved chunks are: {retrieved_chunks}=====\n\n" + Fore.RESET)
                 
             except Exception as e:
                 log.error("graph_execution failure", eval_id = item["eval_id"], error= str(e))

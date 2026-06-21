@@ -23,5 +23,5 @@ class Document(Base):
     uploaded_at=Column(DateTime(timezone=True), server_default=func.now())
     
     user = relationship("User", back_populates="documents")
-    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan")
+    chunks = relationship("Chunk", back_populates="document", cascade="all, delete-orphan", order_by ="and_(Chunk.document_id, Chunk.chunk_index)")
     conversations = relationship("Conversation", back_populates="document", cascade="all, delete-orphan")
