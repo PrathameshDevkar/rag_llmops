@@ -249,9 +249,6 @@ vertexai-free-credits-api-key.json
 
 backend/evaluation/datasets.txt
 backend/evaluation/evaluators.txt
-<<<<<<< HEAD
-backend/evaluation/generate.py
-=======
 backend/evaluation/generate.py
 dockerfiles -.txt
 test.txt
