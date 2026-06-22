@@ -40,7 +40,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{secrets.TEST_DB_USER}} -d ${{ secrets.TEST_DB_NAME }}"
+          --health-cmd "pg_isready -U postgres -d langgraph_rag_test"
           --health-interval 30s
           --health-timeout 5s
           --health-retries 5
@@ -98,7 +98,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{secrets.DB_USER}} -d ${{secrets.DB_NAME}}"
+          --health-cmd "pg_isready -U langgraph_user_2 -d llmops_rag_2"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
