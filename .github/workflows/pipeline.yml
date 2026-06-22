@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - test-eval-docker
+      - main
   pull_request:
     branches:
       - main
