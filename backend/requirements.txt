@@ -63,7 +63,10 @@ certifi==2026.6.17
 cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
 charset-normalizer==3.4.7
-    # via requests
+    # via requestst
+
+langchain-community
+
 click==8.3.3
     # via
     #   deepeval
@@ -72,7 +75,7 @@ click==8.3.3
     #   streamlit
     #   typer
     #   uvicorn
-colorama==0.4.6 ;
+colorama==0.4.6
     # via
     #   click
     #   colorlog

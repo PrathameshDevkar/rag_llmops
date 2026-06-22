@@ -7,13 +7,43 @@ import time
 from datetime import datetime
 import nest_asyncio
 
+
+
+#changes to resolve the error of module import error langchain_community.chat_models.vertexai'==============================
+# ==============================================================================================================================
+# 🧩 UPSTREAM RAGAS COLD-START HOTFIX: Bypasses known issue where ragas unconditionally imports a deleted langchain path
+# ==============================================================================================================================
+try:
+    from langchain_google_vertexai import ChatVertexAI
+except ImportError:
+    class ChatVertexAI:
+        pass
+import sys
+import types
+# Register a virtual spoofed module mapping to satisfy the ragas top-level import firewall
+if "langchain_community.chat_models.vertexai" not in sys.modules:
+    mock_vertex_module = types.ModuleType("vertexai")
+    mock_vertex_module.ChatVertexAI = ChatVertexAI
+    sys.modules["langchain_community.chat_models.vertexai"] = mock_vertex_module
+# ==============================================================================================================================
+
+
 from ragas import evaluate
-from ragas.metrics.collections import (
+
+#to use the collections ,the metrucs need the llm as their argument. that llm must be objet of llm_factory . llmfactory takes llm provider clients
+# from ragas.metrics.collections import (
+#     ContextPrecision,
+#     ContextRecall,
+#     Faithfulness,
+#     AnswerRelevancy
+# )
+from ragas.metrics import (
     ContextPrecision,
     ContextRecall,
     Faithfulness,
     AnswerRelevancy
 )
+from ragas.llms import llm_factory
 
 
 from backend.app.rag.graph import build_graph
@@ -106,6 +136,7 @@ def execute_evaluation_run():
                         
                 final_graph_state = graph.get_state(config).values
                 retrieved_chunks = final_graph_state.get("retrieved_chunks",[])
+                print(Fore.YELLOW + f"\n\n====retrieved chunks are: {retrieved_chunks}=====\n\n" + Fore.RESET)
                 
             except Exception as e:
                 log.error("graph_execution failure", eval_id = item["eval_id"], error= str(e))
@@ -133,6 +164,7 @@ def execute_evaluation_run():
     ragas_dataset = Dataset.from_pandas(df)
     
     local_llm = get_llm()
+    # llm= llm_factory(local_llm)
     local_embedding_model = get_embedding_model()
     
     # metrics = [ContextPrecision(),
@@ -143,8 +175,8 @@ def execute_evaluation_run():
     
     scores = evaluate(
         dataset = ragas_dataset,
+        llm = local_llm,
         metrics = metrics,
-        llm= local_llm,
         embeddings = local_embedding_model,
         allow_nest_asyncio = True
     )
@@ -153,9 +185,9 @@ def execute_evaluation_run():
         log.info(Fore.GREEN + "evaluation is successfull" + Fore.RESET)
         print(f"\nscore is:{scores}\n")
         print(f"\ncontext_precision is:{scores['context_precision']}\n")
-        print(f"\ncontext_recall is:{scores['context_recall']}\n")
-        print(f"\nfaithfulness is:{scores['faithfulness']}\n")
-        print(f"\nanswer_relevancy is:{scores['answer_relevancy']}\n")
+        # print(f"\ncontext_recall is:{scores['context_recall']}\n")
+        # print(f"\nfaithfulness is:{scores['faithfulness']}\n")
+        # print(f"\nanswer_relevancy is:{scores['answer_relevancy']}\n")
 
     # 7. Write structured json analytics out to file disk
     os.makedirs(REPORT_DIR, exist_ok=True)
