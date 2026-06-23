@@ -244,7 +244,7 @@ import requests
 import os
 from colorama import Fore
 
-BACKEND_URL = os.getenv("API_BASE", "http://localhost:8006")
+BACKEND_URL = os.getenv("API_BASE", "http://localhost:8000")
 
 def init_state():
     defaults = {

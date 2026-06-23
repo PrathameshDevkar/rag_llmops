@@ -254,3 +254,5 @@ dockerfiles -.txt
 test.txt
 
 old_yml_files/
+
+k8s-learning/

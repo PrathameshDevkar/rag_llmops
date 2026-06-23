@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     # GEMINI_API_KEY: str
     
     LANGSMITH_TRACING: bool = Field(default=False)
-    LANGSMITH_API_KEY: str 
+    LANGCHAIN_API_KEY: str 
     LANGSMITH_PROJECT: str = Field(default="rag_llmops_self")
     LANGSMITH_ENDPOINT: str
     

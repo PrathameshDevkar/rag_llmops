@@ -18,7 +18,7 @@ COPY . .
 
 # RUN pip install --no-cache-dir uv
 # 🚀 ADDED THE INDEX STRATEGY FLAG TO SOLVE THE CERTIFI LOWER-INDEX TRAP
-RUN uv pip install --system --index-strategy unsafe-best-match -r requirements.txt
+RUN uv pip install --system --index-strategy unsafe-best-match --no-cache -r requirements.txt
 
 EXPOSE 8000
 

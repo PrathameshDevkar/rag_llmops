@@ -64,7 +64,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from backend.app.core.config import settings
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY or ""
+os.environ["LANGCHAIN_API_KEY"] = settings.LANGCHAIN_API_KEY or ""
 os.environ["LANGCHAIN_PROJECT"] = settings.LANGSMITH_PROJECT or "langgraph-rag-backend"
 #==============================================================================================================================
 
