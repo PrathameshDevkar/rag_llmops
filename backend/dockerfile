@@ -8,18 +8,27 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-#INstall uv (Python pacakage/ dependency manager)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
+# Install uv
+RUN curl -LsSf https://astral.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
+# Copy ONLY the requirements file first to maintain optimal layer caching
+COPY backend/requirements.txt ./backend/requirements.txt
 
+# 🚀 FIX: Force uv to look for the CPU backend exclusively.
+# This prevents downloading massive 4GB+ GPU/CUDA wheels, bypasses the broken PyTorch index, 
+# and drops your container build image size significantly!
+RUN uv pip install --system --no-cache --index-strategy unsafe-best-match \
+    --index-url https://download.pytorch.org/whl/cpu \
+    -r backend/requirements.txt || \
+    UV_TORCH_BACKEND=cpu uv pip install --system --no-cache -r backend/requirements.txt
+
+# Copy the rest of the root repository structure so "backend/" remains the top-level module
 COPY . .
 
-# RUN pip install --no-cache-dir uv
-# 🚀 ADDED THE INDEX STRATEGY FLAG TO SOLVE THE CERTIFI LOWER-INDEX TRAP
-RUN uv pip install --system --index-strategy unsafe-best-match --no-cache -r backend/requirements.txt
-
 EXPOSE 8000
+
+# Set Python path to ensure the current workspace is searchable for the "backend" package
+ENV PYTHONPATH=/workspace
 
 CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
