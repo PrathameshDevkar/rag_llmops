@@ -208,6 +208,7 @@ __marimo__/
 
 notes.docx
 concepts.docx
+~$ncepts.docx
 .env
 uv.lock
 pyproject.toml

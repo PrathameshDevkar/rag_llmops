@@ -1,20 +1,73 @@
-__pycache__
-pdf_storage_2
-evaluation/reports
-app/api.txt
-app/core.txt
-app/main_and_app.txt
-app/migration.txt
-app/models.txt
-app/rag.txt
-app/repositories.txt
-app/schemas.txt
-app/services.txt
-app/generate.py
-evaluation/datasets.txt
-evaluation/evaluators.txt
-tests/generate.py
-tests/api.txt
-tests/integration.txt
-tests/rag.txt
-tests/unit.txt
+# Git
+.git
+.github
+
+# Virtual Environments
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+
+# Python Cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Test Cache
+.pytest_cache
+.coverage
+.deepeval
+
+# Logs
+logs
+*.log
+
+# Documents / Uploaded Files
+documents
+
+# Kubernetes YAMLs
+k8s
+k8s-learning
+
+# Old files
+old_yml_files
+
+# Notes / Docs
+*.docx
+notes.docx
+concepts.docx
+rag-kubernetes.docx
+
+# Local environment files
+.env
+.env.test
+
+# Misc
+.DS_Store
+Thumbs.db
+
+
+
+backend/__pycache__
+backend/pdf_storage_2
+backend/evaluation/reports
+backend/app/api.txt
+backend/app/core.txt
+backend/app/main_and_backend/app.txt
+backend/app/migration.txt
+backend/app/models.txt
+backend/app/rag.txt
+backend/app/repositories.txt
+backend/app/schemas.txt
+backend/app/services.txt
+backend/app/generate.py
+backend/evaluation/datasets.txt
+backend/evaluation/evaluators.txt
+backend/tests/generate.py
+backend/tests/api.txt
+backend/tests/integration.txt
+backend/tests/rag.txt
+backend/tests/unit.txt

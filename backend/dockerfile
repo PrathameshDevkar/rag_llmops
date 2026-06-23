@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /workspace
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -18,8 +18,8 @@ COPY . .
 
 # RUN pip install --no-cache-dir uv
 # 🚀 ADDED THE INDEX STRATEGY FLAG TO SOLVE THE CERTIFI LOWER-INDEX TRAP
-RUN uv pip install --system --index-strategy unsafe-best-match --no-cache -r requirements.txt
+RUN uv pip install --system --index-strategy unsafe-best-match --no-cache -r backend/requirements.txt
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
