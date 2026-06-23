@@ -184,7 +184,7 @@ jobs:
   #==========================
 
   docker:
-    # needs: evaluate
+    needs: evaluate
     runs-on: ubuntu-latest
 
     steps:
