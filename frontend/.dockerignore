@@ -1,0 +1,54 @@
+# Git
+.git
+.github
+
+# Virtual Environments
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+
+# Python Cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Test Cache
+.pytest_cache
+.coverage
+.deepeval
+
+# Logs
+logs
+*.log
+
+# Documents / Uploaded Files
+documents
+
+# Kubernetes YAMLs
+k8s
+k8s-learning
+
+# Old files
+old_yml_files
+
+# Notes / Docs
+*.docx
+notes.docx
+concepts.docx
+rag-kubernetes.docx
+errors.docx
+
+# Local environment files
+.env
+.env.test
+
+# Misc
+.DS_Store
+Thumbs.db
+
+#backend folder
+backend
