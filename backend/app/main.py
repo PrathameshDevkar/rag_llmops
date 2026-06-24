@@ -32,7 +32,7 @@ app = FastAPI(title=settings.PROJECT_NAME, lifespan = lifespan)
 
 
 app.include_router(health_router)
-app.include_router(user_router)
+# app.include_router(user_router)
 app.include_router(auth_router)
 app.include_router(document_router)
 app.include_router(chat_router)

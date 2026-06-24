@@ -12,6 +12,7 @@ from backend.app.services.chat_service import ChatService # Import service layer
 
 from backend.app.core.logging import GLOBAL_LOGGER as log
 
+from colorama import Fore
 router = APIRouter(prefix="/chat", tags=["chat"])
 # logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ def chat(
         "generated_answer": None
     }
     
+    print(Fore.YELLOW+ f"\n\nretrievd chunks are:{state['retrieved_chunks']}\n\n" + Fore.RESET)
     graph = request.app.state.graph
     
     def event_generator():
