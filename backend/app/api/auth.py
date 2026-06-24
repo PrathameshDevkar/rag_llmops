@@ -24,7 +24,7 @@ def register(
     if existing_user:
         log.warning("Username already exist")
         return HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
+            status_code = 400,
             detail = "Username already exist"
         )
     

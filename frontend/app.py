@@ -123,8 +123,14 @@ if not st.session_state.token:
                     st.success("Account created successfully! Please switch to the Login tab.")
                 else:
                     # Parse out error detail from the backend validation checks
-                    error_msg = res.json().get("detail", "Registration processing failure.")
-                    st.error(f"Registration failed: {error_msg}")
+                    try:
+                        error_msg = res.json().get(
+                            "detail",
+                            "Registration processing failure."
+                        )
+                    except Exception:
+                        error_msg = res.text                    
+                        st.error(f"Registration failed: {error_msg}")
                     
     st.stop()
 
