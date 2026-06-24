@@ -4,7 +4,6 @@ WORKDIR /frontend-workspace
 
 COPY frontend/requirements.txt ./frontend/requirements.txt
 
-
 RUN pip install --no-cache-dir -r frontend/requirements.txt
 
 COPY . .

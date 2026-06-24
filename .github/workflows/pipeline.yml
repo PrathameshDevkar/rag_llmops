@@ -203,7 +203,7 @@ jobs:
       
       - name: Build Frontend Image
         run: |
-          docker build -t prathameshdevkarch/rag-frontend:latest ./frontend
+          docker build -f frontend/Dockerfile -t prathameshdevkarch/rag-frontend:latest .
       
       # - name: Push Backend Image
       #   run: |
