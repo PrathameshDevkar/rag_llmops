@@ -200,19 +200,19 @@ jobs:
 
       - name: Build Backend Image
         run: |
-          docker build -f backend/Dockerfile -t prathameshdevkarch/rag-backend:latest .
+          docker build -f backend/Dockerfile -t prathameshdevkarch/rag-backend:latest_1 .
       
       - name: Build Frontend Image
         run: |
-          docker build -f frontend/Dockerfile -t prathameshdevkarch/rag-frontend:latest .
+          docker build -f frontend/Dockerfile -t prathameshdevkarch/rag-frontend:latest_1 .
       
       - name: Push Backend Image
         run: |
-          docker push prathameshdevkarch/rag-backend:latest
+          docker push prathameshdevkarch/rag-backend:latest_1
       
       - name: Push Frontend Image
         run: |
-          docker push prathameshdevkarch/rag-frontend:latest
+          docker push prathameshdevkarch/rag-frontend:latest_1
 
     
         
