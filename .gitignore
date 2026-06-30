@@ -261,3 +261,5 @@ k8s/
 
 errors.docx
 ~$errors.docx
+
+backend_pod_log.txt

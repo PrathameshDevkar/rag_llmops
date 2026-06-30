@@ -18,7 +18,7 @@ class DocumentRepository:
     
     def create(self, document:Document):
         self.db.add(document)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(document)
         
     
