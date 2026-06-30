@@ -68,7 +68,7 @@ def retrieval_node(state:RAGState) -> RAGState:
                  elapsed_ms=round(elapsed_ms, 2),
                  chunks_found=len(chunks), 
                  memories_found=len(recalled_memories))
-        
+        print(Fore.YELLOW+ f"\n\nretrieved chunks are:{chunks}\n\n" +Fore.RESET)
         return {
             **state,
             "retrieved_chunks":chunks,

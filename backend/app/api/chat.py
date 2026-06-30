@@ -51,7 +51,6 @@ def chat(
         "generated_answer": None
     }
     
-    print(Fore.YELLOW+ f"\n\nretrievd chunks are:{state['retrieved_chunks']}\n\n" + Fore.RESET)
     graph = request.app.state.graph
     
     def event_generator():
