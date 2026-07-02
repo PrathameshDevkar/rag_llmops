@@ -183,7 +183,7 @@ jobs:
   # Phase 3: Docker completion and delivery
   #==========================
 
-  docker:
+  build-and-push:
     # needs: evaluate
     runs-on: ubuntu-latest
 
@@ -191,34 +191,46 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # - name: Login to the docker
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{secrets.DOCKER_USERNAME}}
-      #     password: ${{secrets.DOCKER_PASSWORD}}
+      - name: Generate Image Tag
+        run: |
+          echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-    # 1. Authenticate directly to Google Artifact Registry
-      - name: Login to Google Artifact Registry
-        uses: docker/login-action@v3
+      # 1. Authenticate directly to Google Artifact Registry
+      # - name: Login to Google Artifact Registry
+        # uses: docker/login-action@v3
+        # with:
+        #   registry: asia-south1-docker.pkg.dev
+        #   username: _json_key
+        #   password: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Authenticate to google cloud
+        uses: google-github-actions/auth@v2
         with:
-          registry: asia-south1-docker.pkg.dev
-          username: _json_key
-          password: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: setup gcloud SDK  
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: configure docker authentication
+        run: |
+          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+
       - name: Build Backend Image
         run: |
-          docker build -f backend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:v2 .
+          docker build -f backend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:$SHORT_SHA .
       
       - name: Build Frontend Image
         run: |
-          docker build -f frontend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:v2 .
+          docker build -f frontend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:$SHORT_SHA .
       
       - name: Push Backend Image
         run: |
-          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:v2
+          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:$SHORT_SHA
       
       - name: Push Frontend Image
         run: |
-          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:v2
+          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:$SHORT_SHA
 
     
         
