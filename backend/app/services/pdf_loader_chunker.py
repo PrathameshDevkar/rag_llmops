@@ -14,16 +14,12 @@ def load_and_chunk_pdf(
     try:
         converter = DocumentConverter()
         docling_docs = converter.convert(file_path).document
+
         log.info("PDF successfully converted")
         chunker = HybridChunker()
         chunks = chunker.chunk(dl_doc = docling_docs)
         chunks = list(chunker.chunk(dl_doc=docling_docs))
-        chunks = list(chunks)
-
-        log.info(
-            "Chunking completed",
-            total_chunks=len(chunks)
-        )
+        log.info("length of chunks list is", length= len(chunks))
         docs=[]
         i=0
         for chunk in chunks:
@@ -32,8 +28,8 @@ def load_and_chunk_pdf(
             print(Fore.YELLOW + f"\n\nchunk during uploading is:{chunk}\n\n" + Fore.RESET)
             i+=1
         for chunk in chunks:
-            headings = chunk.meta.__dict__.get("headings") or []
-            heading = headings[0] or None
+            headings = getattr(chunk.meta, "headings", [])
+            heading = headings[0] if headings else None
             docs.append(Document(page_content=chunk.text, metadata= {"heading":heading}))
             
         return docs
