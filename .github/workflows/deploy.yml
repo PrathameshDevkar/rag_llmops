@@ -1,0 +1,86 @@
+# name: Continuous Deployment
+
+# on:
+#   workflow_run:
+#     workflows: ["Production RAG Pipeline"]
+#     types:
+#       - completed
+
+# jobs:
+#   deploy:
+#     name: k8s Infrastructure Rollout
+#     runs-on: ubuntu-latest
+#     #safety gate: only run if testing, evaluation and docker push pipeline run successfully
+#     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+#     steps:
+#     - name: Checkout Source code
+#       uses: actions/checkout@v4
+
+#     - name: Configure Kubeconfig Access
+#       run: |
+#         mkdir -p ~/.kube  
+#         echo "${{ secrets.KUBECONFIG }}" > ~./kube/config
+#         chmod 600 ~/.kube/config  
+
+#     - name: 1. Initialize namespace 
+#       run: |
+#         kubectl apply -f k8s/namespace.yaml
+
+#     - name: 2. Inject Dynamic Production secrets
+#       run: |
+#         #Generate and inject secrets directly into the k8s memory using github secrets  
+#         kubectl create secret generic backend-secret \
+#           --namespace=rag-platform \
+#           --from-literal=DB_USER="${{ secrets.K8s_DB_USER }}" \
+#           --from-literal=DB_PASSWORD="${{ secrets.K8s_DB_PASSWORD }}" \
+#           --from-literal=SECRET_KEY="${{ secrets.K8s_SECRET_KEY }}" \
+#           --from-literal=HUGGINGFACE_API_KEY="${{ secrets.HUGGINGFACE_API_KEY }}" \
+#           --from-literal=LANGCHAIN_API_KEY="${{ secrets.LANGCHAIN_API_KEY }}" \
+#           --dry-run=client -o yaml | kubectl apply -f -
+
+#         kubectl create secret generic postgres-secret \
+#           --namespace=rag-platform \
+#           --from-literal=username="${{ secrets.K8s_DB_USER }}" \
+#           --from-literal=password="${{ secrets.K8s_DB_PASSWORD }}" \
+#           --dry-run=client -o yaml | kubectl apply -f -
+
+#     - name: 3. Apply Core ConfigMaps & Core Database Infrastructure
+#       run: |
+#         # Appply configurations, storage volumes and dataabse pods sequentially
+#         kubectl apply -f k8s/backend/configmap.yaml
+#         kubectl apply -f k8s/frontend/configmap.yaml
+#         kubectl apply -f k8s/postgres/
+
+#     - name: 4. Execute Isolated Alembic DB schema Migrations
+#       run: |
+#         echo "Clearing old migration tracking references..."
+#         kubectl delete job alembic-migration -n rag-platform --ignore-not-found=true
+
+#         echo "Launching new database migration job..."
+#         kubectl apply -f k8s/migrations/alembic-job.yaml
+
+#         echo "waiting for schema upgrades to complete succesfully"
+#         kubectl wait --for=condition=complete job/alembic-migration -n rag-platform --timeout=180s
+
+#     - name: 5. Deploy Updated Frontned and Backend Tiers
+#       run: |
+#         kubectl apply -f k8s/backend/deployment.yaml
+#         kubectl apply -f k8s/backend/service.yaml
+#         kubectl apply -f k8s/frontend/deployment.yaml
+#         kubectl apply -f k8s/frontend/service.yaml
+
+#     - name: 6. Apply Ingress routing and scaling policies
+#       run: |
+#         kubectl apply -f k8s/ingress/
+#         kubectl apply -f k8s/hpa/
+    
+#     - name: 7. Enforce Cache-Bust and verify Rolling status
+#       run: |
+#         # Force a rolling update to fetch your fresh image tags
+#         kubectl rollout restart deployment/backend-deployment -n rag-platform
+#         kubectl rollout restart deployment/frontend-deployment -n rag-platform
+
+#         # Monitor deployment health status
+#         kubectl rollout status deployment/backend-deployment -n rag-platform --timeout=300s
+#         kubectl rollout status deployment/frontend-deployment -n rag-platform --timeout=120s

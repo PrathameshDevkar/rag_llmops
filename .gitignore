@@ -261,3 +261,8 @@ k8s/
 
 errors.docx
 ~$errors.docx
+
+backend_pod_log.txt
+
+gcp/
+k8s_config.yaml

@@ -33,6 +33,10 @@ RUN uv pip install --system --no-cache --index-strategy unsafe-best-match \
     -r backend/requirements.txt || \
     UV_TORCH_BACKEND=cpu uv pip install --system --no-cache -r backend/requirements.txt
 
+RUN echo "Warmup file content" > /tmp/warmup.txt && \
+python3 -c "from docling.document_converter import DocumentConverter; DocumentConverter().convert('/tmp/warmup.txt')" && \
+rm /tmp/warmup.txt
+
 # Copy the rest of the root repository structure so "backend/" remains the top-level module
 COPY . .
 
