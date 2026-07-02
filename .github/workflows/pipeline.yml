@@ -214,11 +214,11 @@ jobs:
       
       - name: Push Backend Image
         run: |
-          docker push prathameshdevkarch/rag-backend:latest_1
+          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:v2
       
       - name: Push Frontend Image
         run: |
-          docker push prathameshdevkarch/rag-frontend:latest_1
+          docker push asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:v2
 
     
         
