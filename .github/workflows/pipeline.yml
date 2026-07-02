@@ -10,6 +10,10 @@ on:
       - main
   workflow_dispatch: #Allows manual pipeline triggering from the actions UI if needed
 
+permissions:
+  contents: read
+  id-token: write
+  
 jobs:
   # #======================
   # #Stage 1: CORE TESTING and COVERAGE GATE
