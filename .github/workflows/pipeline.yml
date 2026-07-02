@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - apt-docker
-      # - test-eval-docker
       # - main
   pull_request:
     branches:
@@ -12,9 +11,9 @@ on:
   workflow_dispatch: #Allows manual pipeline triggering from the actions UI if needed
 
 jobs:
-  #======================
-  #Stage 1: CORE TESTING and COVERAGE GATE
-  #======================
+  # #======================
+  # #Stage 1: CORE TESTING and COVERAGE GATE
+  # #======================
 
   # test:
   #   runs-on: ubuntu-latest
@@ -83,9 +82,9 @@ jobs:
   #       python -m coverage run --rcfile=.coveragerc -m pytest -v -schema
   #       python -m coverage report -m --ignore-errors
 
-  #====================
-  #Stage 2- evaluation phase
-  #====================
+  # #====================
+  # #Stage 2- evaluation phase
+  # #====================
   # evaluate:
   #   needs: test #strictly blocks execution if test stage fails
   #   runs-on: ubuntu-latest
@@ -192,19 +191,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Login to the docker
+      # - name: Login to the docker
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{secrets.DOCKER_USERNAME}}
+      #     password: ${{secrets.DOCKER_PASSWORD}}
+
+    # 1. Authenticate directly to Google Artifact Registry
+      - name: Login to Google Artifact Registry
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKER_USERNAME}}
-          password: ${{secrets.DOCKER_PASSWORD}}
-
+          registry: asia-south1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.GCP_SA_KEY }}
       - name: Build Backend Image
         run: |
-          docker build -f backend/Dockerfile -t prathameshdevkarch/rag-backend:latest_1 .
+          docker build -f backend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-backend:v2 .
       
       - name: Build Frontend Image
         run: |
-          docker build -f frontend/Dockerfile -t prathameshdevkarch/rag-frontend:latest_1 .
+          docker build -f frontend/Dockerfile -t asia-south1-docker.pkg.dev/poised-cortex-462609-n4/rag-platform/rag-frontend:v2 .
       
       - name: Push Backend Image
         run: |
